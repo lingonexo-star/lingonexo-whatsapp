@@ -93,7 +93,9 @@ def _liste(valeur: str | None) -> list[str]:
 class Parametres:
     destinataires: list[str]
     alerte_admin: list[str]
-    mode_email: str  # graph | smtp | fichier
+    mode_email: str  # acs | graph | smtp | fichier
+    acs_connexion: str  # Azure Communication Services (e-mail)
+    acs_expediteur: str
     graph_tenant: str
     graph_client_id: str
     graph_secret: str
@@ -140,7 +142,9 @@ def charger_parametres(env: dict | None = None) -> Parametres:
     return Parametres(
         destinataires=[d.lower() for d in _liste(g("VEILLE_DESTINATAIRES"))],
         alerte_admin=_liste(g("VEILLE_ALERTE_ADMIN")) or admins,
-        mode_email=g("VEILLE_MODE_EMAIL", "graph" if dans_azure else "fichier").lower(),
+        mode_email=g("VEILLE_MODE_EMAIL", ("acs" if g("ACS_CONNEXION") else "graph") if dans_azure else "fichier").lower(),
+        acs_connexion=g("ACS_CONNEXION"),
+        acs_expediteur=g("ACS_EXPEDITEUR"),
         graph_tenant=g("GRAPH_TENANT_ID"),
         graph_client_id=g("GRAPH_CLIENT_ID"),
         graph_secret=g("GRAPH_CLIENT_SECRET"),

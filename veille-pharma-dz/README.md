@@ -64,7 +64,38 @@ valable 15 minutes et ne sert qu'une fois. La session reste ouverte 12 heures.
 
 ---
 
-## Installation (à confier à votre informaticien, environ 1 heure)
+## Installation par vous-même (environ 15 minutes, depuis le navigateur)
+
+Rien à installer sur votre ordinateur, et aucun service informatique nécessaire : tout se fait dans
+**Azure Cloud Shell**, un terminal Microsoft qui s'ouvre dans le navigateur. Les e-mails partent par
+le **service d'e-mail d'Azure** : aucune messagerie d'entreprise n'est utilisée.
+
+1. **Créez un compte Azure** sur https://azure.microsoft.com/free (une carte bancaire est demandée
+   pour vérifier l'identité ; le coût de la veille reste de l'ordre de quelques euros par mois au plus).
+2. **Ouvrez** https://shell.azure.com et choisissez **Bash**. La première fois, acceptez la création
+   de l'espace de stockage proposé.
+3. **Chargez le fichier** `veille-pharma-dz.zip` : bouton **Gérer les fichiers** (ou l'icône
+   d'envoi) → **Charger**.
+4. **Collez cette commande**, en mettant les adresses des administrateurs, puis appuyez sur Entrée :
+
+   ```bash
+   unzip -o veille-pharma-dz.zip && bash veille-pharma-dz/installer.sh premier.admin@exemple.com second.admin@exemple.com
+   ```
+
+5. **Attendez la fin** (5 à 15 minutes). Le script affiche l'**adresse du portail**.
+6. **Envoyez cette adresse aux administrateurs.** Chacun s'y connecte avec son adresse e-mail,
+   ajoute les destinataires et lance la première vérification.
+
+Pour **mettre à jour** le logiciel plus tard : recharger le nouveau .zip et relancer la même commande
+(sans les adresses, elles sont retenues). Pour **tout supprimer** : `az group delete -n veille-pharma`.
+
+> Les e-mails partent d'une adresse du type `DoNotReply@xxxx.azurecomm.net`. Au premier envoi,
+> vérifiez les courriers indésirables et ajoutez cette adresse aux expéditeurs approuvés.
+> Pour envoyer depuis votre propre nom de domaine, il suffit de le relier au service d'e-mail Azure.
+
+---
+
+## Installation manuelle (avancé, par exemple avec la messagerie Microsoft 365 d'une entreprise)
 
 ### Ce qu'il faut
 
@@ -114,7 +145,7 @@ Function App → **Paramètres** → **Variables d'environnement** :
 | `VEILLE_SECRET` | une longue suite aléatoire (ex. `openssl rand -hex 32`) | Signe les sessions du portail. Ne pas la communiquer |
 | `VEILLE_URL_PUBLIQUE` | `https://<nom>.azurewebsites.net` | Adresse du portail, utilisée dans les liens des e-mails |
 | `VEILLE_PLANNING` | `0 0 6 * * *` | Tous les jours à 6h UTC = **7h00 à Alger** |
-| `VEILLE_MODE_EMAIL` | `graph` | Envoi via Microsoft 365 |
+| `VEILLE_MODE_EMAIL` | `graph` | Envoi via Microsoft 365 (`acs` : service d'e-mail Azure, avec `ACS_CONNEXION` et `ACS_EXPEDITEUR`) |
 | `GRAPH_TENANT_ID` | *(étape 2)* | |
 | `GRAPH_CLIENT_ID` | *(étape 2)* | |
 | `GRAPH_CLIENT_SECRET` | *(étape 2)* | Idéalement via une référence Key Vault |
@@ -186,6 +217,7 @@ Les mentions dans les « Vu… » (visas) ne comptent pas. Les nominations et vi
 ```
 veille-pharma-dz/
 ├── function_app.py        # Azure Functions : minuteur quotidien + portail web
+├── installer.sh           # installation complète en une commande (Azure Cloud Shell)
 ├── sources.yaml           # sources, mots-clés, exclusions
 ├── veille/
 │   ├── runner.py          # une vérification : sources → note → e-mail ou RAS → journal
@@ -197,9 +229,9 @@ veille-pharma-dz/
 │   ├── ui.py              # pages HTML du portail
 │   ├── annuaire.py        # administrateurs et destinataires
 │   ├── securite.py        # liens de connexion à usage unique, sessions signées, anti-CSRF
-│   ├── mailer.py          # Microsoft Graph / SMTP / fichier
+│   ├── mailer.py          # service d'e-mail Azure / Microsoft Graph / SMTP / fichier
 │   └── storage.py         # Blob Azure ou dossier local
-└── tests/                 # 38 tests (faux JO en PDF, faux sites, parcours du portail)
+└── tests/                 # 40 tests (faux JO en PDF, faux sites, parcours du portail)
 ```
 
 Essais en local (Python 3.11+) :

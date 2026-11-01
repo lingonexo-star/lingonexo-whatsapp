@@ -2,7 +2,7 @@
 
 > **Pour reprendre ce projet avec Claude :** « lis `docs/veille-reglementaire-pharma-algerie.md`
 > et `veille-pharma-dz/README.md`, et continuons ».
-> **Statut (1er novembre 2026) :** logiciel et portail d'administration écrits et testés (38 tests automatiques), pas encore déployés sur Azure.
+> **Statut (1er novembre 2026) :** logiciel et portail d'administration écrits et testés (40 tests automatiques), pas encore déployés sur Azure.
 
 ## 1. Besoin exprimé
 
@@ -23,7 +23,8 @@
 | Sujet | Décision | Pourquoi |
 |---|---|---|
 | Hébergement | **Azure Functions** (cloud Microsoft), déclenchement par minuteur | Tourne seul chaque matin, sans PC ni Copilot ; quasi gratuit |
-| E-mail | **Microsoft 365 / Outlook** via Microsoft Graph | Reste dans l'environnement Microsoft |
+| Installation | **Par l'utilisateur lui-même**, sur son propre abonnement Azure, via `installer.sh` dans Azure Cloud Shell | Pas de service informatique, rien à installer sur le PC |
+| E-mail | **Service d'e-mail Azure** (Azure Communication Services) ; Microsoft Graph et SMTP restent possibles | Ne dépend d'aucune messagerie d'entreprise |
 | Résumés | **Azure OpenAI** (service Microsoft), facultatif | Article lisible. Sans lui, l'article 1er officiel est repris |
 | Preuve « RAS » | **Page Journal du portail** + historique | Chaque destinataire peut vérifier que la veille a tourné |
 | Source principale | **Journal officiel** : détection du numéro suivant et lecture du PDF entier | Exhaustif. Une recherche web seule rate des textes |
@@ -39,10 +40,11 @@ paramètres, coûts, limites).
 
 ## 4. Reste à faire
 
-1. **Administrateur** : adresse fournie par l'utilisateur, à saisir dans le paramètre Azure `VEILLE_ADMINS`.
-   Elle n'est volontairement pas écrite dans le code. Les destinataires sont ensuite ajoutés par l'administrateur
-   depuis le portail.
-2. **Déployer sur Azure** en suivant `veille-pharma-dz/README.md`, étapes 1 à 6.
+1. **Administrateurs** : deux adresses fournies par l'utilisateur (la sienne et celle d'Amine), à passer à
+   `installer.sh`. Elles ne sont volontairement pas écrites dans le code. Les destinataires sont ensuite
+   ajoutés depuis le portail.
+2. **Installer** : suivre « Installation par vous-même » dans `veille-pharma-dz/README.md`. Le script a été
+   vérifié avec une fausse commande `az`, mais pas encore sur un vrai abonnement Azure.
 3. Au 1er lancement, **confirmer les sources** : le format d'adresse des PDF du JO et le flux du
    ministère de l'Industrie pharmaceutique. Ils n'ont pas pu être testés depuis l'environnement de
    Claude, qui n'a pas accès aux sites `.dz`.

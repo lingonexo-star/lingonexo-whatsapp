@@ -212,3 +212,33 @@ def test_parametres_admin():
     p = charger_parametres({"VEILLE_ADMINS": "Chef@Labo.dz", "VEILLE_URL_PUBLIQUE": "https://v.net/"})
     assert p.admins == ["chef@labo.dz"] and p.alerte_admin == ["chef@labo.dz"]
     assert p.url_journal == "https://v.net/journal"
+
+
+def test_envoi_par_le_service_email_azure(parametres):
+    from veille.mailer import ExpediteurAcs
+
+    class FauxClient:
+        def __init__(self):
+            self.messages = []
+
+        def begin_send(self, message):
+            self.messages.append(message)
+
+            class Attente:
+                def result(self_inner):
+                    return {"status": "Succeeded"}
+            return Attente()
+
+    parametres.acs_connexion = "endpoint=https://x.communication.azure.com/;accesskey=abc"
+    parametres.acs_expediteur = "DoNotReply@abcd.azurecomm.net"
+    client = FauxClient()
+    ExpediteurAcs(parametres, client).envoyer(["a@x.dz", "b@y.dz"], "Sujet", "<p>Note</p>")
+    # Un message par personne : aucun destinataire ne voit l'adresse des autres.
+    assert [m["recipients"]["to"] for m in client.messages] == [[{"address": "a@x.dz"}], [{"address": "b@y.dz"}]]
+    assert client.messages[0]["senderAddress"] == "DoNotReply@abcd.azurecomm.net"
+    assert client.messages[0]["content"] == {"subject": "Sujet", "html": "<p>Note</p>"}
+
+
+def test_mode_email_azure_par_defaut_dans_azure():
+    p = charger_parametres({"WEBSITE_SITE_NAME": "veille", "ACS_CONNEXION": "endpoint=x", "AzureWebJobsStorage": "c"})
+    assert p.mode_email == "acs"

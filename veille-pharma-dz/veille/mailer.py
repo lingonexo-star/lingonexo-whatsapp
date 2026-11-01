@@ -1,8 +1,12 @@
 """Envoi des e-mails.
 
-- graph   : Microsoft 365 / Outlook via Microsoft Graph (recommandé sur Azure)
-- smtp    : n'importe quel serveur SMTP
+- acs     : service d'e-mail d'Azure (Azure Communication Services). Ne dépend d'aucune
+            messagerie d'entreprise : c'est le mode installé par installer.sh.
+- graph   : Microsoft 365 / Outlook d'une entreprise, via Microsoft Graph
+- smtp    : n'importe quel serveur SMTP (Gmail avec mot de passe d'application, etc.)
 - fichier : pas d'envoi, le message est enregistré (tests)
+
+Chaque destinataire reçoit son propre message : personne ne voit les adresses des autres.
 """
 
 from __future__ import annotations
@@ -44,20 +48,22 @@ class ExpediteurGraph:
         return reponse.json()["access_token"]
 
     def envoyer(self, destinataires: list[str], sujet: str, html: str) -> None:
-        reponse = self.http.post(
-            f"https://graph.microsoft.com/v1.0/users/{quote(self.p.graph_expediteur)}/sendMail",
-            headers={"Authorization": f"Bearer {self._jeton()}"},
-            json={
-                "message": {
-                    "subject": sujet,
-                    "body": {"contentType": "HTML", "content": html},
-                    "toRecipients": [{"emailAddress": {"address": a}} for a in destinataires],
+        jeton = self._jeton()
+        for adresse in destinataires:
+            reponse = self.http.post(
+                f"https://graph.microsoft.com/v1.0/users/{quote(self.p.graph_expediteur)}/sendMail",
+                headers={"Authorization": f"Bearer {jeton}"},
+                json={
+                    "message": {
+                        "subject": sujet,
+                        "body": {"contentType": "HTML", "content": html},
+                        "toRecipients": [{"emailAddress": {"address": adresse}}],
+                    },
+                    "saveToSentItems": True,
                 },
-                "saveToSentItems": True,
-            },
-        )
-        if reponse.status_code != 202:
-            raise RuntimeError(f"Envoi refusé par Microsoft 365 ({reponse.status_code}) : {reponse.text[:300]}")
+            )
+            if reponse.status_code != 202:
+                raise RuntimeError(f"Envoi refusé par Microsoft 365 ({reponse.status_code}) : {reponse.text[:300]}")
 
 
 class ExpediteurSmtp:
@@ -67,16 +73,42 @@ class ExpediteurSmtp:
         self.p = p
 
     def envoyer(self, destinataires: list[str], sujet: str, html: str) -> None:
-        message = MIMEMultipart("alternative")
-        message["Subject"] = sujet
-        message["From"] = self.p.smtp_expediteur
-        message["To"] = ", ".join(destinataires)
-        message.attach(MIMEText(html, "html", "utf-8"))
         with smtplib.SMTP(self.p.smtp_hote, self.p.smtp_port, timeout=60) as serveur:
             serveur.starttls()
             if self.p.smtp_utilisateur:
                 serveur.login(self.p.smtp_utilisateur, self.p.smtp_mot_de_passe)
-            serveur.sendmail(self.p.smtp_expediteur, destinataires, message.as_string())
+            for adresse in destinataires:
+                message = MIMEMultipart("alternative")
+                message["Subject"] = sujet
+                message["From"] = self.p.smtp_expediteur
+                message["To"] = adresse
+                message.attach(MIMEText(html, "html", "utf-8"))
+                serveur.sendmail(self.p.smtp_expediteur, [adresse], message.as_string())
+
+
+class ExpediteurAcs:
+    """Service d'e-mail d'Azure (Azure Communication Services)."""
+
+    def __init__(self, p: Parametres, client=None):
+        if not (p.acs_connexion and p.acs_expediteur):
+            raise RuntimeError("Paramètres e-mail manquants : ACS_CONNEXION et ACS_EXPEDITEUR")
+        if client is None:
+            from azure.communication.email import EmailClient
+
+            client = EmailClient.from_connection_string(p.acs_connexion)
+        self.client = client
+        self.expediteur = p.acs_expediteur
+
+    def envoyer(self, destinataires: list[str], sujet: str, html: str) -> None:
+        for adresse in destinataires:
+            resultat = self.client.begin_send({
+                "senderAddress": self.expediteur,
+                "recipients": {"to": [{"address": adresse}]},
+                "content": {"subject": sujet, "html": html},
+            }).result()
+            statut = (resultat or {}).get("status")
+            if statut and statut.lower() != "succeeded":
+                raise RuntimeError(f"Envoi refusé par Azure ({statut}) : {(resultat or {}).get('error')}")
 
 
 class ExpediteurFichier:
@@ -94,10 +126,12 @@ class ExpediteurFichier:
 
 
 def construire_expediteur(http: ClientHttp, p: Parametres, stockage: Stockage):
+    if p.mode_email == "acs":
+        return ExpediteurAcs(p)
     if p.mode_email == "graph":
         return ExpediteurGraph(http, p)
     if p.mode_email == "smtp":
         return ExpediteurSmtp(p)
     if p.mode_email == "fichier":
         return ExpediteurFichier(stockage)
-    raise RuntimeError(f"VEILLE_MODE_EMAIL inconnu : {p.mode_email} (graph, smtp ou fichier)")
+    raise RuntimeError(f"VEILLE_MODE_EMAIL inconnu : {p.mode_email} (acs, graph, smtp ou fichier)")

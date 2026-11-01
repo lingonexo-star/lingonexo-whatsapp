@@ -1,6 +1,7 @@
 azure-functions
 azure-storage-blob>=12.19
 azure-identity>=1.15
+azure-communication-email>=1.0
 requests>=2.31
 beautifulsoup4>=4.12
 pypdf>=4.0
