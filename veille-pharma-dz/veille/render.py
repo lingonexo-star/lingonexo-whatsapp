@@ -184,3 +184,36 @@ def rendre_message(sujet: str, titre: str, paragraphes: list[str], bouton: tuple
         + (_pied(e(note)) if note else "")
     )
     return sujet, _document(sujet, corps)
+
+
+# --------------------------------------------------------------------------------------
+#  Version Markdown de la note (lisible directement sur GitHub)
+# --------------------------------------------------------------------------------------
+def _md(texte) -> str:
+    """Neutralise les caractères qui casseraient un tableau ou un lien Markdown."""
+    return str(texte or "").replace("|", "/").replace("\n", " ").replace("[", "(").replace("]", ")")
+
+
+def rendre_markdown(article: Article, entree: dict, jour: date) -> str:
+    n = len(article.elements)
+    lignes = [f"# Note de veille du {date_longue_fr(jour)}", "", f"**{pluriel(n, 'nouveauté')}.** {_md(article.chapeau)}", ""]
+    if article.avertissement:
+        lignes += [f"> {_md(article.avertissement)}", ""]
+    for i, el in enumerate(article.elements, start=1):
+        t = el.trouvaille
+        lignes += [f"## {i}. {_md(el.titre)}", "",
+                   f"*{_md(t.type_texte)} · {_md(t.source_nom)}* — **Impact {_md(el.impact)}**", "",
+                   _md(el.resume), ""]
+        if el.entree_en_vigueur:
+            lignes.append(f"- **Entrée en vigueur :** {_md(el.entree_en_vigueur)}")
+        if el.acteurs and el.acteurs != "Non précisé":
+            lignes.append(f"- **Acteurs concernés :** {_md(el.acteurs)}")
+        if t.autorite:
+            lignes.append(f"- **Autorité :** {_md(t.autorite)}")
+        lignes += [f"- **Source :** {_md(t.reference or t.source_nom)}", f"- **Texte officiel :** [consulter]({t.url})", ""]
+        if t.titre and t.titre != el.titre:
+            lignes += [f"> Intitulé officiel : {_md(t.titre)}", ""]
+    lignes += ["---", "", "**Sources vérifiées**", ""]
+    lignes += [f"- {'✅' if s['statut'] != 'erreur' else '⚠️'} {_md(s['nom'])} — {_md(s['detail'])}" for s in entree["sources"]]
+    lignes += ["", "*Résumés établis automatiquement : seul le texte officiel fait foi.*", ""]
+    return "\n".join(lignes)

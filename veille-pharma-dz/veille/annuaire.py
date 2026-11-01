@@ -67,6 +67,10 @@ class Annuaire:
     def trouver(self, identifiant: str) -> Destinataire | None:
         return next((d for d in self.lister() if d.id == identifiant), None)
 
+    def trouver_par_email(self, email: str) -> Destinataire | None:
+        email = normaliser_email(email)
+        return next((d for d in self.lister() if d.email == email), None)
+
     def est_admin(self, email: str) -> bool:
         return normaliser_email(email) in self.parametres.admins
 

@@ -15,6 +15,7 @@ import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 from urllib.parse import quote
 
 from .config import Parametres
@@ -80,7 +81,7 @@ class ExpediteurSmtp:
             for adresse in destinataires:
                 message = MIMEMultipart("alternative")
                 message["Subject"] = sujet
-                message["From"] = self.p.smtp_expediteur
+                message["From"] = formataddr((self.p.smtp_nom, self.p.smtp_expediteur))
                 message["To"] = adresse
                 message.attach(MIMEText(html, "html", "utf-8"))
                 serveur.sendmail(self.p.smtp_expediteur, [adresse], message.as_string())

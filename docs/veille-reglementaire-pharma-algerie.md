@@ -2,7 +2,7 @@
 
 > **Pour reprendre ce projet avec Claude :** « lis `docs/veille-reglementaire-pharma-algerie.md`
 > et `veille-pharma-dz/README.md`, et continuons ».
-> **Statut (1er novembre 2026) :** logiciel et portail d'administration écrits et testés (40 tests automatiques), pas encore déployés sur Azure.
+> **Statut (1er novembre 2026) :** logiciel et portail d'administration écrits et testés (45 tests automatiques). Version gratuite GitHub + Gmail prête ; pas encore mise en ligne.
 
 ## 1. Besoin exprimé
 
@@ -23,7 +23,9 @@
 | Sujet | Décision | Pourquoi |
 |---|---|---|
 | Hébergement | **Azure Functions** (cloud Microsoft), déclenchement par minuteur | Tourne seul chaque matin, sans PC ni Copilot ; quasi gratuit |
-| Installation | **Par l'utilisateur lui-même**, sur son propre abonnement Azure, via `installer.sh` dans Azure Cloud Shell | Pas de service informatique, rien à installer sur le PC |
+| Hébergement retenu | **Version gratuite : GitHub Actions (dépôt privé) + Gmail** — voir `veille-pharma-dz/GUIDE-GRATUIT.md` | L'utilisateur ne veut rien payer ni donner de carte bancaire |
+| Installation | **Par l'utilisateur lui-même**, depuis le navigateur ; l'administrateur est invité par e-mail sur le dépôt | Pas de service informatique, rien à installer sur le PC |
+| Version Azure | Conservée en option (`installer.sh`, portail web) | Si un jour un abonnement Azure est disponible |
 | E-mail | **Service d'e-mail Azure** (Azure Communication Services) ; Microsoft Graph et SMTP restent possibles | Ne dépend d'aucune messagerie d'entreprise |
 | Résumés | **Azure OpenAI** (service Microsoft), facultatif | Article lisible. Sans lui, l'article 1er officiel est repris |
 | Preuve « RAS » | **Page Journal du portail** + historique | Chaque destinataire peut vérifier que la veille a tourné |
@@ -43,8 +45,8 @@ paramètres, coûts, limites).
 1. **Administrateurs** : deux adresses fournies par l'utilisateur (la sienne et celle d'Amine), à passer à
    `installer.sh`. Elles ne sont volontairement pas écrites dans le code. Les destinataires sont ensuite
    ajoutés depuis le portail.
-2. **Installer** : suivre « Installation par vous-même » dans `veille-pharma-dz/README.md`. Le script a été
-   vérifié avec une fausse commande `az`, mais pas encore sur un vrai abonnement Azure.
+2. **Installer la version gratuite** : suivre `veille-pharma-dz/GUIDE-GRATUIT.md` (paquet à déposer sur GitHub :
+   `veille-pharma-dz/preparer-paquet-github.sh`). Vérifié par une simulation locale (git + workflow), pas encore sur GitHub.
 3. Au 1er lancement, **confirmer les sources** : le format d'adresse des PDF du JO et le flux du
    ministère de l'Industrie pharmaceutique. Ils n'ont pas pu être testés depuis l'environnement de
    Claude, qui n'a pas accès aux sites `.dz`.

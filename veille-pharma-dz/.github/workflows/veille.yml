@@ -1,0 +1,90 @@
+# Veille réglementaire – version gratuite (GitHub Actions + Gmail)
+# Chaque matin, et à la demande depuis l'onglet Actions (bouton « Run workflow »).
+name: Veille réglementaire
+
+on:
+  schedule:
+    - cron: "17 5 * * *"   # 5h17 UTC = 6h17 à Alger (GitHub peut décaler de quelques minutes)
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Que voulez-vous faire ?"
+        type: choice
+        default: Lancer une vérification
+        options:
+          - Lancer une vérification
+          - Ajouter un destinataire
+          - Retirer un destinataire
+          - Suspendre un destinataire
+          - Réactiver un destinataire
+          - Envoyer un e-mail de test
+      email:
+        description: "Adresse e-mail de la personne (sauf pour « Lancer une vérification »)"
+        required: false
+      nom:
+        description: "Nom complet (pour un ajout)"
+        required: false
+      fonction:
+        description: "Fonction (pour un ajout, facultatif)"
+        required: false
+      bienvenue:
+        description: "Envoyer un message de bienvenue (pour un ajout)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veille
+  cancel-in-progress: false
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-github.txt
+
+      - name: Installation
+        run: pip install -r requirements-github.txt
+
+      - name: Veille
+        env:
+          ACTION: ${{ inputs.action }}
+          EMAIL: ${{ inputs.email }}
+          NOM: ${{ inputs.nom }}
+          FONCTION: ${{ inputs.fonction }}
+          BIENVENUE: ${{ inputs.bienvenue }}
+          VEILLE_ADMINS: ${{ vars.VEILLE_ADMINS }}
+          VEILLE_ORGANISATION: ${{ vars.VEILLE_ORGANISATION }}
+          VEILLE_STOCKAGE: local
+          VEILLE_DOSSIER_DONNEES: suivi
+          VEILLE_TABLEAU_DE_BORD: README.md
+          VEILLE_MODE_EMAIL: smtp
+          SMTP_HOTE: smtp.gmail.com
+          SMTP_PORT: "587"
+          SMTP_UTILISATEUR: ${{ secrets.GMAIL_ADRESSE }}
+          SMTP_MOT_DE_PASSE: ${{ secrets.GMAIL_MOT_DE_PASSE_APPLICATION }}
+          SMTP_EXPEDITEUR: ${{ secrets.GMAIL_ADRESSE }}
+          IA_URL: ${{ vars.IA_URL }}
+          IA_MODELE: ${{ vars.IA_MODELE }}
+          IA_CLE: ${{ secrets.IA_CLE }}
+        run: python -m veille github
+
+      - name: Enregistrer le suivi
+        if: always()
+        run: |
+          git config user.name "Veille réglementaire"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A suivi README.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "Suivi de la veille du $(date -u +%Y-%m-%d)"
+          git pull -q --rebase --autostash
+          git push -q

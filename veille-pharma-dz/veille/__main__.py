@@ -5,6 +5,7 @@
     python -m veille sources           # teste l'accès à chaque source
     python -m veille jo 2026 57        # analyse un numéro précis du Journal officiel
     python -m veille serveur           # portail d'administration sur http://127.0.0.1:8000
+    python -m veille github            # version gratuite : action lancée depuis GitHub Actions
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ def main(arguments: list[str] | None = None) -> int:
     jo.add_argument("numero", type=int)
     serveur = commandes.add_parser("serveur", help="lancer le portail en local (essais)")
     serveur.add_argument("--port", type=int, default=8000)
+    commandes.add_parser("github", help="action GitHub Actions (variables ACTION, EMAIL, NOM…)")
     args = parseur.parse_args(arguments)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -50,6 +52,11 @@ def main(arguments: list[str] | None = None) -> int:
 
     if args.commande == "serveur":
         return lancer_serveur(parametres, args.port)
+
+    if args.commande == "github":
+        from .mode_github import principal
+
+        return principal(parametres)
 
     if args.commande == "journal":
         for entree in lire_journal(ouvrir_stockage(parametres), limite=20):

@@ -105,10 +105,14 @@ class Parametres:
     smtp_utilisateur: str
     smtp_mot_de_passe: str
     smtp_expediteur: str
+    smtp_nom: str  # nom affiché de l'expéditeur
     aoai_endpoint: str
     aoai_cle: str
     aoai_deploiement: str
     aoai_version: str
+    ia_url: str  # IA compatible OpenAI (ex. offre gratuite Gemini) : adresse de l'API
+    ia_cle: str
+    ia_modele: str
     stockage: str  # azure | local
     dossier_donnees: str
     connexion_stockage: str
@@ -125,7 +129,7 @@ class Parametres:
 
     @property
     def ia_active(self) -> bool:
-        return bool(self.aoai_endpoint and self.aoai_cle and self.aoai_deploiement)
+        return bool(self.aoai_endpoint and self.aoai_cle and self.aoai_deploiement) or bool(self.ia_url and self.ia_cle)
 
 
 def charger_parametres(env: dict | None = None) -> Parametres:
@@ -154,10 +158,14 @@ def charger_parametres(env: dict | None = None) -> Parametres:
         smtp_utilisateur=g("SMTP_UTILISATEUR"),
         smtp_mot_de_passe=g("SMTP_MOT_DE_PASSE"),
         smtp_expediteur=g("SMTP_EXPEDITEUR"),
+        smtp_nom=g("SMTP_NOM_EXPEDITEUR", "Veille réglementaire"),
         aoai_endpoint=g("AZURE_OPENAI_ENDPOINT"),
         aoai_cle=g("AZURE_OPENAI_API_KEY"),
         aoai_deploiement=g("AZURE_OPENAI_DEPLOYMENT"),
         aoai_version=g("AZURE_OPENAI_API_VERSION", "2024-10-21"),
+        ia_url=g("IA_URL"),
+        ia_cle=g("IA_CLE"),
+        ia_modele=g("IA_MODELE"),
         stockage=g("VEILLE_STOCKAGE", "azure" if dans_azure else "local").lower(),
         dossier_donnees=g("VEILLE_DOSSIER_DONNEES", str(RACINE / "donnees")),
         connexion_stockage=connexion,

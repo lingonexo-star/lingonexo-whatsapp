@@ -12,7 +12,7 @@ from .config import Parametres, charger_configuration
 from .http import ClientHttp
 from .mailer import construire_expediteur
 from .models import ErreurSource, ResultatSource
-from .render import rendre_alerte, rendre_email
+from .render import rendre_alerte, rendre_email, rendre_markdown
 from .sources import construire_source
 from .storage import Stockage, ouvrir_stockage
 from .summarize import construire_redacteur
@@ -106,6 +106,8 @@ def executer(
                                    parametres.organisation, contact)
         entree["rapport"] = f"rapports/{identifiant}.html"
         stockage.ecrire_texte(entree["rapport"], html, "text/html")
+        entree["rapport_md"] = f"rapports/{identifiant}.md"
+        stockage.ecrire_texte(entree["rapport_md"], rendre_markdown(article, entree, jour), "text/markdown")
         try:
             destinataires = Annuaire(stockage, parametres).actifs()
             if not destinataires:

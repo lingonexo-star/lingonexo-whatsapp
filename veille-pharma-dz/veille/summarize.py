@@ -118,23 +118,28 @@ class RedacteurIA(RedacteurSimple):
         self.p = parametres
 
     def _appeler(self, consigne: str, contenu: dict) -> dict:
-        url = (f"{self.p.aoai_endpoint.rstrip('/')}/openai/deployments/{self.p.aoai_deploiement}"
-               f"/chat/completions?api-version={self.p.aoai_version}")
-        reponse = self.http.post(
-            url,
-            headers={"api-key": self.p.aoai_cle, "Content-Type": "application/json"},
-            json={
-                "messages": [
-                    {"role": "system", "content": consigne},
-                    {"role": "user", "content": json.dumps(contenu, ensure_ascii=False)},
-                ],
-                "response_format": {"type": "json_object"},
-            },
-            timeout=120,
-        )
+        corps = {
+            "messages": [
+                {"role": "system", "content": consigne},
+                {"role": "user", "content": json.dumps(contenu, ensure_ascii=False)},
+            ],
+            "response_format": {"type": "json_object"},
+        }
+        if self.p.aoai_endpoint:  # Azure OpenAI
+            url = (f"{self.p.aoai_endpoint.rstrip('/')}/openai/deployments/{self.p.aoai_deploiement}"
+                   f"/chat/completions?api-version={self.p.aoai_version}")
+            entetes = {"api-key": self.p.aoai_cle}
+        else:  # API compatible OpenAI (ex. Gemini)
+            url = self.p.ia_url
+            entetes = {"Authorization": f"Bearer {self.p.ia_cle}"}
+            corps["model"] = self.p.ia_modele
+        reponse = self.http.post(url, headers={**entetes, "Content-Type": "application/json"}, json=corps, timeout=120)
         if reponse.status_code != 200:
-            raise RuntimeError(f"Azure OpenAI a répondu {reponse.status_code} : {reponse.text[:300]}")
-        return json.loads(reponse.json()["choices"][0]["message"]["content"])
+            raise RuntimeError(f"Le service d'IA a répondu {reponse.status_code} : {reponse.text[:300]}")
+        texte = reponse.json()["choices"][0]["message"]["content"].strip()
+        if texte.startswith("```"):  # certaines IA entourent le JSON de balises de code
+            texte = texte.strip("`").removeprefix("json").strip()
+        return json.loads(texte)
 
     def rediger(self, trouvailles: list[Trouvaille], jour: date) -> Article:
         a_resumer = [t for t in trouvailles if not t.a_verifier]
