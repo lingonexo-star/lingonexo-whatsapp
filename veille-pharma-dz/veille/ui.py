@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html import escape
 
+from .marque import image_data
 from .textutil import date_fr, date_longue_fr, pluriel
 
 PRODUIT = "Veille réglementaire"
@@ -38,6 +39,9 @@ MESSAGES = {
     "verification_echec": ("erreur", "La vérification n'a pas pu aboutir. Consultez le journal pour le détail."),
     "introuvable": ("erreur", "Ce destinataire n'existe plus."),
     "session": ("erreur", "Le formulaire a expiré. Recommencez l'opération."),
+    "source_ajoutee": ("ok", "Source ajoutée. Elle sera consultée à chaque vérification ; la prochaine sert de point de départ."),
+    "source_retiree": ("info", "Source retirée : elle ne sera plus consultée."),
+    "source_introuvable": ("erreur", "Cette source n'existe plus."),
 }
 
 STATUTS = {
@@ -48,59 +52,67 @@ STATUTS = {
 
 CSS = """
 :root{
-  --fond:#f3f5f7;--surface:#ffffff;--surface-2:#f7f9fa;--texte:#17242c;--doux:#5b6b75;--bord:#dde3e7;
-  --accent:#0b4f6c;--accent-survol:#093f57;--accent-doux:#e3eef3;--sur-accent:#ffffff;
-  --barre:#0b3a50;--barre-texte:#e6f0f4;--barre-doux:#9fbfcd;
+  --fond:#f6f8f9;--surface:#ffffff;--surface-2:#f5f8fa;--texte:#0b1220;--doux:#5b6676;--bord:#dfe5ea;
+  --accent:#0b1220;--accent-survol:#1d2a3f;--accent-doux:#eaf8f3;--sur-accent:#ffffff;--lien:#1670b5;
+  --vert:#0f7a5f;--menthe:#0ca880;--azur:#1c84d0;--degrade:linear-gradient(90deg,#0ca880,#1ba7b3 45%,#1c84d0);
+  --barre:#ffffff;--barre-texte:#0b1220;--barre-doux:#5b6676;--barre-survol:rgba(11,18,32,.05);
   --ok:#067647;--ok-f:#e6f5ec;--info:#1d5fbf;--info-f:#e8f0fc;--alerte:#a1470a;--alerte-f:#fdf2e3;
   --erreur:#b42318;--erreur-f:#fdeceb;--neutre:#56636c;--neutre-f:#eef1f3;
-  --police:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --police:"Manrope","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --titre:"Sora","Manrope","Segoe UI",Arial,sans-serif;
   --mono:"Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
   color-scheme:light}
 @media (prefers-color-scheme:dark){:root{
-  --fond:#0d151a;--surface:#141f26;--surface-2:#17242c;--texte:#e3ebef;--doux:#9cafba;--bord:#26353e;
-  --accent:#6cc3e8;--accent-survol:#8fd2ef;--accent-doux:#12303d;--sur-accent:#0b1a21;
-  --barre:#08202c;--barre-texte:#e3ebef;--barre-doux:#86a8b7;
+  --fond:#04050a;--surface:#0b111b;--surface-2:#101826;--texte:#eef2f6;--doux:#9aa6b8;--bord:#1d2738;
+  --accent:#36eaba;--accent-survol:#5cf0c9;--accent-doux:#0d2a24;--sur-accent:#04050a;--lien:#42b4fc;
+  --vert:#36eaba;--menthe:#36eaba;--azur:#42b4fc;--degrade:linear-gradient(90deg,#36eaba,#3cd2de 45%,#42b4fc);
+  --barre:#04050a;--barre-texte:#eef2f6;--barre-doux:#9aa6b8;--barre-survol:rgba(255,255,255,.06);
   --ok:#5ad08a;--ok-f:#10291c;--info:#86b5ff;--info-f:#14233d;--alerte:#f2b052;--alerte-f:#2d210c;
   --erreur:#ff8a80;--erreur-f:#3a1715;--neutre:#a3b0b8;--neutre-f:#1d2a32;color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--fond);color:var(--texte);font:15px/1.55 var(--police);-webkit-font-smoothing:antialiased}
-a{color:var(--accent)}
+a{color:var(--lien)}
+h1,h2,.indicateur .valeur{font-family:var(--titre)}
 .enveloppe{max-width:1180px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 /* Barre supérieure */
-.barre{background:var(--barre);color:var(--barre-texte)}
+.barre{background:var(--barre);color:var(--barre-texte);position:relative;border-bottom:1px solid var(--bord)}
+.barre::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--degrade)}
 .barre .enveloppe{display:flex;align-items:center;gap:24px;min-height:60px;padding-block:8px}
-.marque{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none;flex:none}
-.marque .monogramme{width:34px;height:34px;border-radius:6px;background:#1b7a9f;color:#fff;display:grid;place-items:center;
-  font-weight:700;font-size:13px;letter-spacing:.04em;line-height:1}
-.marque .nom strong{display:block;font-size:15px;font-weight:600;line-height:1.25}
-.marque .nom span{display:block;font-size:12px;color:var(--barre-doux);line-height:1.25}
-nav.principale{display:flex;gap:4px;flex-wrap:wrap}
+.marque{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;flex:none}
+.marque picture,.marque img{display:block;height:24px;width:auto}
+.marque .nom{border-left:1px solid var(--bord);padding-left:14px}
+.marque .nom strong{display:block;font-family:var(--titre);font-size:14px;font-weight:600;line-height:1.25}
+.marque .nom span{display:block;font-size:11.5px;color:var(--barre-doux);line-height:1.25}
+nav.principale{display:flex;gap:2px;flex-wrap:nowrap}
 nav.principale a{color:var(--barre-doux);text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:6px}
-nav.principale a:hover{color:var(--barre-texte);background:rgba(255,255,255,.06)}
-nav.principale a.actif{color:var(--barre-texte);background:rgba(255,255,255,.1)}
+nav.principale a:hover{color:var(--barre-texte);background:var(--barre-survol)}
+nav.principale a.actif{color:var(--barre-texte);background:var(--barre-survol);box-shadow:inset 0 -2px 0 var(--menthe)}
 .compte{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--barre-doux);min-width:0}
-.compte .adresse{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.compte .adresse{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+@media (max-width:1360px){.compte .adresse{display:none}}
+@media (max-width:1180px){.marque .nom span{display:none}}
 @media (max-width:1000px){.barre .enveloppe{flex-wrap:wrap;row-gap:4px}.compte{margin-left:0;width:100%;padding-bottom:6px}
-  nav.principale{order:3;width:100%}}
-.compte .role{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--barre-texte);
-  border:1px solid rgba(255,255,255,.25);border-radius:4px;padding:1px 6px}
-.compte button{background:transparent;color:var(--barre-texte);border:1px solid rgba(255,255,255,.3);border-radius:6px;
-  font:500 13px var(--police);padding:6px 10px;cursor:pointer}
-.compte button:hover{background:rgba(255,255,255,.08)}
+  nav.principale{order:3;width:100%;flex-wrap:wrap}.compte .adresse{display:block}}
+.compte .role{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--vert);
+  background:var(--accent-doux);border-radius:4px;padding:2px 7px;font-weight:700}
+.compte button{background:transparent;color:var(--barre-texte);border:1px solid var(--bord);border-radius:6px;
+  font:600 13px var(--police);padding:6px 10px;cursor:pointer}
+.compte button:hover{background:var(--barre-survol)}
 /* Contenu */
 main{padding-block:28px 56px;display:flex;flex-direction:column;gap:20px}
 .entete-page{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .entete-page h1{font-size:24px;font-weight:600;margin:0;line-height:1.25}
 .entete-page p{margin:4px 0 0;color:var(--doux);max-width:70ch}
-.carte{background:var(--surface);border:1px solid var(--bord);border-radius:8px}
+.carte{background:var(--surface);border:1px solid var(--bord);border-radius:10px}
 .carte>.titre{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--bord)}
-.carte>.titre h2{font-size:15px;font-weight:600;margin:0}
+.carte>.titre h2{font-size:15px;font-weight:600;margin:0;color:var(--vert);display:flex;align-items:center;gap:9px}
+.carte>.titre h2::before{content:"";width:10px;height:10px;flex:none;background:var(--azur);clip-path:polygon(0 0,100% 0,100% 100%)}
 .carte>.titre span{font-size:13px;color:var(--doux)}
 .carte>.corps{padding:16px 18px}
 .grille-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;align-items:start}
 .indicateurs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
-.indicateur{background:var(--surface);border:1px solid var(--bord);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.indicateur{background:var(--surface);border:1px solid var(--bord);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .indicateur .libelle{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--doux);font-weight:600}
 .indicateur .valeur{font-size:28px;font-weight:600;line-height:1.15;font-variant-numeric:tabular-nums}
 .indicateur .precision{font-size:13px;color:var(--doux)}
@@ -183,10 +195,15 @@ details.execution[open] summary{background:var(--surface-2)}
 /* Connexion */
 .connexion{min-height:100vh;display:grid;place-items:center;padding:32px max(20px,env(safe-area-inset-left,0px))}
 .connexion .boite{width:100%;max-width:420px;display:flex;flex-direction:column;gap:18px}
-.connexion .marque{color:var(--texte)}
+.connexion .marque picture,.connexion .marque img{height:30px}
+.connexion .carte{position:relative;overflow:hidden}
+.connexion .carte::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--degrade)}
+.connexion .marque{color:var(--texte);flex-direction:column;align-items:flex-start;gap:10px}
+.connexion .marque .nom{border-left:0;padding-left:0}
+.connexion .marque .nom span{display:block!important}
 .connexion .marque .nom span{color:var(--doux)}
 .connexion .carte .corps{padding:26px;display:flex;flex-direction:column;gap:16px}
-.connexion h1{font-size:20px;margin:0}
+.connexion h1{font-size:21px;margin:0;font-family:var(--titre)}
 .connexion p{margin:0;color:var(--doux);font-size:14px}
 .connexion .btn{width:100%;padding:11px 16px}
 .connexion .mentions{font-size:12px;color:var(--doux);text-align:center}
@@ -197,7 +214,11 @@ details.execution[open] summary{background:var(--surface-2)}
 def _document(titre: str, corps: str) -> str:
     return f"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex,nofollow"><title>{e(titre)} · {PRODUIT}</title><style>{CSS}</style></head>
+<meta name="robots" content="noindex,nofollow"><title>{e(titre)} · {PRODUIT} · YoVendoMás</title>
+<link rel="icon" href="{image_data('symbole-nuit-web.png')}">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap">
+<style>{CSS}</style></head>
 <body>{corps}
 <script>
 document.querySelectorAll('form[data-attente]').forEach(function(f){{f.addEventListener('submit',function(){{
@@ -207,8 +228,13 @@ document.querySelectorAll('form[data-confirmer]').forEach(function(f){{f.addEven
 </script></body></html>"""
 
 
+def _logo() -> str:
+    return (f'<picture><source media="(prefers-color-scheme: dark)" srcset="{image_data("logo-blanc.png")}">'
+            f'<img src="{image_data("logo-nuit.png")}" alt="YoVendoMás"></picture>')
+
+
 def _marque(organisation: str = "") -> str:
-    return (f'<a class="marque" href="/"><span class="monogramme" aria-hidden="true">VR</span>'
+    return (f'<a class="marque" href="/">{_logo()}'
             f'<span class="nom"><strong>{PRODUIT}</strong><span>{e(organisation or SOUS_TITRE)}</span></span></a>')
 
 
@@ -263,7 +289,8 @@ def _page_connexion(titre: str, contenu: str, organisation: str) -> str:
     corps = f"""<div class="connexion"><div class="boite">
 {_marque(organisation)}
 <div class="carte"><div class="corps">{contenu}</div></div>
-<div class="mentions">Accès réservé à l'administrateur et aux destinataires de la veille.</div>
+<div class="mentions">Accès réservé à l'administrateur et aux destinataires de la veille.<br>
+YoVendoMás · Agence digitale pour les commerces · applis, sites, publicité · yovendomas.com</div>
 </div></div>"""
     return _document(titre, corps)
 
@@ -479,28 +506,47 @@ TYPES_SOURCES = {"joradp": "Journal officiel (PDF)", "page": "Page web", "rss": 
                  "google_news": "Recherche presse"}
 
 
-def page_sources(ctx: Contexte, sources: list, derniere: dict | None) -> str:
+def page_sources(ctx: Contexte, sources: list, derniere: dict | None, flash: str | None = None,
+                 erreur: str = "", valeurs: dict | None = None) -> str:
+    valeurs = valeurs or {}
     resultats = {s["id"]: s for s in (derniere or {}).get("sources", [])}
     lignes = []
     for src in sources:
         r = resultats.get(src.id)
+        ajoutee = bool(src.options.get("ajoutee"))
         if not src.actif:
             etat, detail = '<span class="badge neutre">Désactivée</span>', "Adresse à confirmer avant activation."
         elif r is None:
-            etat, detail = '<span class="badge neutre">En attente</span>', "Pas encore vérifiée."
+            etat, detail = '<span class="badge neutre">En attente</span>', "Sera consultée à la prochaine vérification."
         elif r["statut"] == "erreur":
             etat, detail = '<span class="badge erreur">Échec</span>', r["detail"]
         else:
             etat, detail = '<span class="badge ok">Vérifiée</span>', r["detail"]
         adresse = "joradp.dz" if src.type == "joradp" else ("news.google.com" if src.type == "google_news" else src.url)
-        lignes.append(f"""<tr><td class="cellule-nom"><strong>{e(src.nom)}</strong><span>{e(TYPES_SOURCES.get(src.type, src.type))}</span></td>
+        origine = "Ajoutée depuis le portail" if ajoutee else TYPES_SOURCES.get(src.type, src.type)
+        action = ""
+        if ajoutee:
+            action = (f'<form method="post" action="/sources/retirer" data-confirmer="Ne plus surveiller {e(src.nom)} ?">'
+                      f'{_champ_jeton(ctx)}<input type="hidden" name="id" value="{e(src.id)}">'
+                      f'<button class="btn danger petit" type="submit">Retirer</button></form>')
+        lignes.append(f"""<tr><td class="cellule-nom"><strong>{e(src.nom)}</strong><span>{e(origine)}</span></td>
 <td class="mono" style="word-break:break-all" data-libelle="Adresse">{e(adresse)}</td><td data-libelle="État">{etat}</td>
-<td style="min-width:260px" data-libelle="Dernier résultat">{e(detail)}</td></tr>""")
-    contenu = (_entete("Sources surveillées", "Sources consultées à chaque vérification. La liste, les mots-clés et les "
-                       "exclusions se règlent dans le fichier sources.yaml.")
+<td style="min-width:240px" data-libelle="Dernier résultat">{e(detail)}</td><td><div class="actions">{action}</div></td></tr>""")
+    bandeau = f'<div class="bandeau erreur" role="alert" style="margin-bottom:12px">{e(erreur)}</div>' if erreur else ""
+    formulaire = f"""<section class="carte"><div class="titre"><h2>Ajouter une source</h2>
+<span>Un site à surveiller en plus : page d'actualités, de textes réglementaires, ou flux RSS</span></div><div class="corps">{bandeau}
+<form class="ajout" method="post" action="/sources" data-attente="Vérification de l'adresse…">{_champ_jeton(ctx)}
+<div class="champ"><label for="nom-source">Nom de la source</label><input id="nom-source" name="nom" maxlength="120" autocomplete="off" value="{e(valeurs.get('nom'))}" placeholder="Agence nationale des produits pharmaceutiques"></div>
+<div class="champ"><label for="adresse-source">Adresse de la page <span aria-hidden="true">*</span></label><input id="adresse-source" name="adresse" type="url" required autocomplete="off" value="{e(valeurs.get('adresse'))}" placeholder="https://www.exemple.dz/actualites"></div>
+<div class="pied-form"><button class="btn" type="submit">Ajouter la source</button>
+<span class="aide" style="font-size:13px;color:var(--doux)">L'adresse est testée avant d'être enregistrée. Seules les publications qui concernent le secteur seront signalées.</span></div>
+</form></div></section>"""
+    contenu = (_entete("Sources surveillées", "Sources consultées à chaque vérification. Les sources de base et les "
+                       "mots-clés se règlent dans le fichier sources.yaml ; vous pouvez en ajouter ici.")
+               + formulaire
                + f"""<section class="carte"><div class="defilement"><table class="donnees empile"><thead><tr><th>Source</th><th>Adresse</th>
-<th>État</th><th>Dernier résultat</th></tr></thead><tbody>{''.join(lignes)}</tbody></table></div></section>""")
-    return page("Sources", contenu, ctx, "sources")
+<th>État</th><th>Dernier résultat</th><th></th></tr></thead><tbody>{''.join(lignes)}</tbody></table></div></section>""")
+    return page("Sources", contenu, ctx, "sources", flash)
 
 
 # ---------------------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 # Veille réglementaire – Industrie pharmaceutique (Algérie)
 
+*Un service YoVendoMás · Agence digitale pour les commerces · applis, sites, publicité · yovendomas.com*
+
 Logiciel de *regulatory intelligence* qui tourne **seul, dans le cloud Microsoft (Azure)**.
 Il ne dépend ni de Claude, ni de Copilot, ni d'un ordinateur allumé.
 
@@ -68,7 +70,8 @@ valable 15 minutes et ne sert qu'une fois. La session reste ouverte 12 heures.
   facultatif qui explique le fonctionnement. Pour chaque personne : **envoyer un e-mail de test**,
   **suspendre / réactiver**, **retirer**.
 - **Journal** : chaque vérification, avec le détail par source et le rapport complet archivé.
-- **Sources** : liste des sources surveillées et résultat de leur dernière vérification.
+- **Sources** : liste des sources surveillées et résultat de leur dernière vérification. L'administrateur peut
+  **ajouter un site** (nom et adresse ; l'adresse est testée avant d'être enregistrée) et retirer ceux qu'il a ajoutés.
 
 | Destinataires | Journal |
 |---|---|
@@ -195,8 +198,10 @@ Depuis ce dossier `veille-pharma-dz`, au choix :
 
 ## Sources
 
-Elles se règlent dans **`sources.yaml`**, sans toucher au code : ajout, suppression, mots-clés,
-exclusions.
+Les sources de base, les mots-clés et les exclusions se règlent dans **`sources.yaml`**, sans toucher au code.
+L'administrateur peut aussi **ajouter un site** lui-même, depuis le portail (page Sources) ou, dans la version
+gratuite, avec l'action « Ajouter une source ». Le site est consulté dès la vérification suivante, avec le même
+filtrage par mots-clés.
 
 | Source | Méthode | État |
 |---|---|---|
@@ -240,12 +245,13 @@ veille-pharma-dz/
 │   ├── portail.py         # routes du portail, rôles, actions
 │   ├── ui.py              # pages HTML du portail
 │   ├── annuaire.py        # administrateurs et destinataires
+│   ├── sources_admin.py   # sources ajoutées par l'administrateur
 │   ├── securite.py        # liens de connexion à usage unique, sessions signées, anti-CSRF
 │   ├── mailer.py          # service d'e-mail Azure / Microsoft Graph / SMTP / fichier
 │   └── storage.py         # Blob Azure ou dossier local
 │   └── mode_github.py     # version gratuite : actions et tableau de bord GitHub
 ├── .github/workflows/veille.yml   # version gratuite : lancement quotidien et formulaires
-└── tests/                 # 45 tests (faux JO en PDF, faux sites, portail, version GitHub)
+└── tests/                 # 56 tests (faux JO en PDF, faux sites, portail, version GitHub, sources ajoutées)
 ```
 
 Essais en local (Python 3.11+) :

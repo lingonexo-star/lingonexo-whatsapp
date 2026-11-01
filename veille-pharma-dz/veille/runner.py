@@ -8,12 +8,13 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from .annuaire import Annuaire
-from .config import Parametres, charger_configuration
+from .config import Parametres
 from .http import ClientHttp
 from .mailer import construire_expediteur
 from .models import ErreurSource, ResultatSource
 from .render import rendre_alerte, rendre_email, rendre_markdown
 from .sources import construire_source
+from .sources_admin import charger_configuration_complete
 from .storage import Stockage, ouvrir_stockage
 from .summarize import construire_redacteur
 
@@ -47,7 +48,7 @@ def executer(
     maintenant = maintenant or datetime.now(ZoneInfo(parametres.fuseau))
     jour = maintenant.date()
     identifiant = maintenant.strftime("%Y-%m-%dT%H-%M-%S")
-    config = charger_configuration(parametres.fichier_sources)
+    config = charger_configuration_complete(parametres, stockage)
     etat_global: dict = stockage.lire_json("etat.json", {}) or {}
 
     # 1. Vérifier chaque source -------------------------------------------------------

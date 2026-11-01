@@ -18,17 +18,22 @@ on:
           - Suspendre un destinataire
           - Réactiver un destinataire
           - Envoyer un e-mail de test
+          - Ajouter une source
+          - Retirer une source
       email:
         description: "Adresse e-mail de la personne (sauf pour « Lancer une vérification »)"
         required: false
       nom:
-        description: "Nom complet (pour un ajout)"
+        description: "Nom (de la personne ou de la source)"
         required: false
       fonction:
         description: "Fonction (pour un ajout, facultatif)"
         required: false
+      adresse:
+        description: "Adresse du site (pour « Ajouter une source » ou « Retirer une source »)"
+        required: false
       bienvenue:
-        description: "Envoyer un message de bienvenue (pour un ajout)"
+        description: "Envoyer un message de bienvenue (pour un ajout de destinataire)"
         type: boolean
         default: true
 
@@ -62,6 +67,7 @@ jobs:
           NOM: ${{ inputs.nom }}
           FONCTION: ${{ inputs.fonction }}
           BIENVENUE: ${{ inputs.bienvenue }}
+          ADRESSE: ${{ inputs.adresse }}
           VEILLE_ADMINS: ${{ vars.VEILLE_ADMINS }}
           VEILLE_ORGANISATION: ${{ vars.VEILLE_ORGANISATION }}
           VEILLE_STOCKAGE: local

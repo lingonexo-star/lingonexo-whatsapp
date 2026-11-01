@@ -16,11 +16,12 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from .annuaire import Annuaire, ErreurAnnuaire, normaliser_email
-from .config import Parametres, charger_configuration
+from .config import Parametres
 from .mailer import construire_expediteur
 from .models import ErreurSource
 from .render import rendre_message
 from .runner import executer, lire_journal
+from . import sources_admin
 from .storage import Stockage, StockageLocal
 from .textutil import date_fr, date_longue_fr, pluriel
 
@@ -31,6 +32,8 @@ ACTIONS = {
     "Suspendre un destinataire": "suspendre",
     "Réactiver un destinataire": "reactiver",
     "Envoyer un e-mail de test": "tester",
+    "Ajouter une source": "ajouter_source",
+    "Retirer une source": "retirer_source",
 }
 STATUTS = {"RAS": "✅ RAS", "NOUVEAUTES": "🔵 Nouveautés", "INCOMPLET": "⚠️ Incomplète"}
 
@@ -60,7 +63,10 @@ def _cellule(texte) -> str:
 def rendre_tableau_de_bord(entrees: list[dict], destinataires: list, sources: list, url_actions: str,
                            dossier: str, maintenant: datetime) -> str:
     """Page d'accueil du dépôt : état de la veille, mode d'emploi, historique, destinataires, sources."""
-    l = ["# Veille réglementaire · Industrie pharmaceutique · Algérie", "",
+    l = ['<picture><source media="(prefers-color-scheme: dark)" srcset="veille/marque/logo-blanc.png">'
+         '<img src="veille/marque/logo-nuit.png" alt="YoVendoMás" height="34"></picture>', "",
+         "<sub>Agence digitale pour les commerces · applis, sites, publicité · yovendomas.com</sub>", "",
+         "# Veille réglementaire · Industrie pharmaceutique · Algérie", "",
          f"*Page mise à jour automatiquement le {date_longue_fr(maintenant.date())} à {maintenant:%H:%M} (heure d'Alger).*", ""]
 
     l += ["## Dernière vérification", ""]
@@ -87,7 +93,9 @@ def rendre_tableau_de_bord(entrees: list[dict], destinataires: list, sources: li
           "| Ne plus envoyer à quelqu'un | Retirer un destinataire | adresse |",
           "| Arrêter temporairement | Suspendre un destinataire | adresse |",
           "| Reprendre les envois | Réactiver un destinataire | adresse |",
-          "| Vérifier qu'une adresse reçoit bien | Envoyer un e-mail de test | adresse |", ""]
+          "| Vérifier qu'une adresse reçoit bien | Envoyer un e-mail de test | adresse |",
+          "| Surveiller un nouveau site | Ajouter une source | nom et adresse du site |",
+          "| Ne plus surveiller un site ajouté | Retirer une source | adresse (ou nom) du site |", ""]
 
     recentes = []
     for x in entrees:
@@ -126,16 +134,19 @@ def rendre_tableau_de_bord(entrees: list[dict], destinataires: list, sources: li
     l.append("")
 
     resultats = {s["id"]: s for s in (entrees[0].get("sources", []) if entrees else [])}
-    l += ["## Sources surveillées", "", "| Source | Dernier résultat |", "|---|---|"]
+    l += ["## Sources surveillées", "", "| Source | Adresse | Dernier résultat |", "|---|---|---|"]
     for src in sources:
         if not src.actif:
             continue
         r = resultats.get(src.id)
-        etat = "en attente" if r is None else (f"⚠️ {_cellule(r['detail'])}" if r["statut"] == "erreur"
-                                               else f"✅ {_cellule(r['detail'])}")
-        l.append(f"| {_cellule(src.nom)} | {etat} |")
+        etat = "en attente de la prochaine vérification" if r is None else (
+            f"⚠️ {_cellule(r['detail'])}" if r["statut"] == "erreur" else f"✅ {_cellule(r['detail'])}")
+        adresse = "joradp.dz" if src.type == "joradp" else ("Google Actualités" if src.type == "google_news" else src.url)
+        ajout = " *(ajoutée)*" if src.options.get("ajoutee") else ""
+        l.append(f"| {_cellule(src.nom)}{ajout} | {_cellule(adresse)} | {etat} |")
     l += ["", "---", "", "*Résumés établis automatiquement : seul le texte officiel fait foi. "
-          "Mode d'emploi complet : [DOCUMENTATION.md](DOCUMENTATION.md).*", ""]
+          "Mode d'emploi complet : [DOCUMENTATION.md](DOCUMENTATION.md).*", "",
+          "**YoVendoMás** · Agence digitale pour les commerces · applis, sites, publicité · yovendomas.com", ""]
     return "\n".join(l)
 
 
@@ -162,7 +173,7 @@ def _test(p: Parametres, nom: str) -> tuple[str, str]:
 
 def realiser(p: Parametres, action: str, email: str = "", nom: str = "", fonction: str = "",
              bienvenue: bool = True, par: str = "", stockage: Stockage | None = None, expediteur=None,
-             lanceur=None) -> str:
+             lanceur=None, adresse: str = "", http=None) -> str:
     """Réalise une action et renvoie le message à afficher. Lève ErreurAction si c'est impossible."""
     stockage = stockage or StockageLocal(p.dossier_donnees)
     code = ACTIONS.get(action.strip(), action.strip())
@@ -181,6 +192,21 @@ def realiser(p: Parametres, action: str, email: str = "", nom: str = "", fonctio
         if entree["email"].get("erreur"):
             resume += f" Attention, l'e-mail n'est pas parti : {entree['email']['erreur']}"
         return resume
+    if code == "ajouter_source":
+        from .http import ClientHttp
+
+        try:
+            source, nb = sources_admin.ajouter(p, stockage, http or ClientHttp(), nom, adresse, par)
+        except sources_admin.ErreurSourceAdmin as exc:
+            raise ErreurAction(str(exc)) from exc
+        return (f"Source « {source['nom']} » ajoutée ({pluriel(nb, 'publication lue', 'publications lues')}). "
+                "Elle sera consultée à chaque vérification ; la prochaine sert de point de départ.")
+    if code == "retirer_source":
+        try:
+            source = sources_admin.retirer(stockage, p, adresse or nom)
+        except sources_admin.ErreurSourceAdmin as exc:
+            raise ErreurAction(str(exc)) from exc
+        return f"Source « {source['nom']} » retirée : elle ne sera plus consultée."
     if code not in ("ajouter", "retirer", "suspendre", "reactiver", "tester"):
         raise ErreurAction(f"Action inconnue : « {action} ».")
     if not email:
@@ -220,7 +246,8 @@ def principal(p: Parametres, env: dict | None = None) -> int:
     code_retour = 0
     try:
         message = realiser(p, action, env.get("EMAIL", ""), env.get("NOM", ""), env.get("FONCTION", ""),
-                           env.get("BIENVENUE", "true").lower() != "false", par, stockage)
+                           env.get("BIENVENUE", "true").lower() != "false", par, stockage,
+                           adresse=env.get("ADRESSE", ""))
         titre = f"✅ {action}"
     except (ErreurAction, ErreurSource) as exc:
         message, titre, code_retour = str(exc), f"❌ {action} : impossible", 1
@@ -229,7 +256,8 @@ def principal(p: Parametres, env: dict | None = None) -> int:
     url_actions = f"{env.get('GITHUB_SERVER_URL', 'https://github.com')}/{depot}/actions/workflows/veille.yml" if depot else "../../actions"
     maintenant = datetime.now(ZoneInfo(p.fuseau))
     tableau = rendre_tableau_de_bord(
-        lire_journal(stockage, 60), Annuaire(stockage, p).lister(), charger_configuration(p.fichier_sources).sources,
+        lire_journal(stockage, 60), Annuaire(stockage, p).lister(),
+        sources_admin.charger_configuration_complete(p, stockage).sources,
         url_actions, Path(p.dossier_donnees).name, maintenant)
     Path(env.get("VEILLE_TABLEAU_DE_BORD", "README.md")).write_text(tableau, encoding="utf-8")
 

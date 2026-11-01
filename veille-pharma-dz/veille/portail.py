@@ -17,10 +17,11 @@ from zoneinfo import ZoneInfo
 
 from . import ui
 from .annuaire import Annuaire, ErreurAnnuaire, normaliser_email
-from .config import Parametres, charger_configuration
+from .config import Parametres
 from .mailer import construire_expediteur
 from .render import rendre_message
 from .runner import executer, lire_journal
+from . import sources_admin
 from .securite import DUREE_SESSION, NOM_COOKIE, LiensConnexion, Sessions
 from .storage import Stockage, ouvrir_stockage
 
@@ -32,7 +33,8 @@ ENTETES_SECURITE = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
-    "Content-Security-Policy": ("default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; "
+    "Content-Security-Policy": ("default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                                "font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; "
                                 "img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"),
 }
 
@@ -83,8 +85,10 @@ def lire_cookies(entete: str | None) -> dict:
 
 class Portail:
     def __init__(self, parametres: Parametres, *, stockage: Stockage | None = None, expediteur=None,
-                 horloge: Callable[[], datetime] | None = None, lanceur: Callable[..., dict] | None = None):
+                 horloge: Callable[[], datetime] | None = None, lanceur: Callable[..., dict] | None = None,
+                 http=None):
         self.p = parametres
+        self._http = http
         self.stockage = stockage or ouvrir_stockage(parametres)
         self._expediteur = expediteur
         self.horloge = horloge or (lambda: datetime.now(timezone.utc))
@@ -144,7 +148,8 @@ class Portail:
             return self._rapport(chemin.removeprefix("/rapports/"), ctx)
 
         # Pages réservées à l'administrateur
-        admin_seulement = {"/tableau-de-bord", "/destinataires", "/destinataires/action", "/sources", "/verification"}
+        admin_seulement = {"/tableau-de-bord", "/destinataires", "/destinataires/action", "/sources", "/sources/retirer",
+                           "/verification"}
         if chemin in admin_seulement and ctx.role != "admin":
             return Reponse.html(ui.page_erreur("Accès réservé", "Cette page est réservée à l'administrateur.", ctx), 403)
         if chemin == "/tableau-de-bord" and methode == "GET":
@@ -155,10 +160,16 @@ class Portail:
             return Reponse.html(ui.page_destinataires(ctx, flash, self.annuaire.lister(), self.p.admins))
         if chemin == "/destinataires/action" and methode == "POST":
             return self._action_destinataire(req, ctx)
-        if chemin == "/sources" and methode == "GET":
-            config = charger_configuration(self.p.fichier_sources)
-            derniere = next(iter(lire_journal(self.stockage, 1)), None)
-            return Reponse.html(ui.page_sources(ctx, config.sources, derniere))
+        if chemin == "/sources":
+            if methode == "POST":
+                return self._ajouter_source(req, ctx)
+            return Reponse.html(self._page_sources(ctx, flash))
+        if chemin == "/sources/retirer" and methode == "POST":
+            try:
+                sources_admin.retirer_par_id(self.stockage, req.formulaire.get("id", ""))
+                return Reponse.redirection("/sources?msg=source_retiree")
+            except sources_admin.ErreurSourceAdmin:
+                return Reponse.redirection("/sources?msg=source_introuvable")
         if chemin == "/verification" and methode == "POST":
             try:
                 self.lanceur()
@@ -290,6 +301,20 @@ class Portail:
         except ErreurAnnuaire:
             return Reponse.redirection("/destinataires?msg=introuvable")
         return Reponse.redirection("/destinataires")
+
+    def _page_sources(self, ctx: ui.Contexte, flash: str | None, erreur: str = "", valeurs: dict | None = None) -> str:
+        config = sources_admin.charger_configuration_complete(self.p, self.stockage)
+        derniere = next(iter(lire_journal(self.stockage, 1)), None)
+        return ui.page_sources(ctx, config.sources, derniere, flash, erreur, valeurs)
+
+    def _ajouter_source(self, req: Requete, ctx: ui.Contexte) -> Reponse:
+        f = req.formulaire
+        try:
+            sources_admin.ajouter(self.p, self.stockage, self._http or _http(), f.get("nom", ""), f.get("adresse", ""),
+                                  ctx.email)
+        except sources_admin.ErreurSourceAdmin as exc:
+            return Reponse.html(self._page_sources(ctx, None, str(exc), f), 400)
+        return Reponse.redirection("/sources?msg=source_ajoutee")
 
     # --- e-mails ------------------------------------------------------------------------------
     def _salutation(self, nom: str) -> str:

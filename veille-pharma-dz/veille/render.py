@@ -12,13 +12,21 @@ from html import escape
 from .models import Article, ElementArticle
 from .textutil import date_longue_fr, pluriel
 
-POLICE = "'Segoe UI', Arial, Helvetica, sans-serif"
-MARINE = "#0b3a50"
-BLEU = "#0b4f6c"
-TEXTE = "#17242c"
-GRIS = "#5b6b75"
-BORDURE = "#dfe5e9"
-FOND = "#f2f5f7"
+# Charte YoVendoMás (voir veille/marque) : encre, vert profond, menthe → azur, Manrope / Sora.
+POLICE = "Manrope, 'Segoe UI', Arial, Helvetica, sans-serif"
+POLICE_TITRE = "Sora, Manrope, 'Segoe UI', Arial, Helvetica, sans-serif"
+ENCRE = "#0b1220"
+VERT = "#0f7a5f"
+MENTHE = "#0ca880"
+AZUR = "#1c84d0"
+BLEU = "#1670b5"  # liens
+TEXTE = ENCRE
+GRIS = "#5b6676"
+BORDURE = "#dfe5ea"
+FOND = "#f3f6f8"
+ENCADRE_FOND = "#effaf6"
+ENCADRE_BORD = "#c8eedf"
+SLOGAN = "Agence digitale pour les commerces · applis, sites, publicité · yovendomas.com"
 COULEURS_IMPACT = {
     "élevé": ("#b42318", "#fdeceb"),
     "moyen": ("#a1470a", "#fdf2e3"),
@@ -39,25 +47,40 @@ def _badge(impact: str) -> str:
             f'font-weight:600;color:{texte};background:{fond};">Impact {e(impact)}</span>')
 
 
+def _triangle() -> str:
+    """Petit triangle azur de la marque, devant les titres de section."""
+    return (f'<span style="display:inline-block;width:0;height:0;border-top:9px solid {AZUR};'
+            f'border-left:9px solid transparent;margin-right:8px;vertical-align:middle;"></span>')
+
+
+def _titre_section(texte: str) -> str:
+    return (f'<div style="font-family:{POLICE_TITRE};font-size:15px;font-weight:600;color:{VERT};margin:0 0 8px;">'
+            f'{_triangle()}{e(texte)}</div>')
+
+
 def _entete(titre: str, sous_titre: str, organisation: str) -> str:
-    marque = f"{PRODUIT} · {organisation}" if organisation else f"{PRODUIT} · Algérie"
+    produit = PRODUIT + (f" · {organisation}" if organisation else " · Algérie")
     return f"""
-<tr><td style="padding:20px 32px 18px;background:{MARINE};color:#ffffff;">
-  <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#b9d3df;">{e(marque)}</div>
-  <div style="font-size:22px;font-weight:600;margin-top:8px;line-height:1.3;">{e(titre)}</div>
-  {f'<div style="font-size:14px;color:#d5e5ec;margin-top:2px;">{e(sous_titre)}</div>' if sous_titre else ''}
-</td></tr>"""
+<tr><td style="padding:24px 32px 16px;background:#ffffff;">
+  <div style="font-family:{POLICE_TITRE};font-size:21px;font-weight:700;color:{ENCRE};letter-spacing:-.01em;">
+    <span style="display:inline-block;width:0;height:0;border-top:11px solid {MENTHE};border-left:11px solid transparent;margin-right:6px;"></span>YoVendoMás</div>
+  <div style="font-size:11px;color:{GRIS};margin-top:2px;">{e(SLOGAN)}</div>
+  <div style="font-family:{POLICE_TITRE};font-size:22px;font-weight:700;color:{ENCRE};line-height:1.3;margin-top:18px;">{e(titre)}</div>
+  <div style="font-size:13px;color:{GRIS};margin-top:3px;">{e(produit)}{(' — ' + e(sous_titre)) if sous_titre else ''}</div>
+</td></tr>
+<tr><td style="height:4px;line-height:4px;font-size:0;background:{MENTHE};background-image:linear-gradient(90deg,{MENTHE},#1ba7b3,{AZUR});">&nbsp;</td></tr>"""
 
 
 def _pied(texte_html: str) -> str:
     return (f'<tr><td style="padding:18px 32px 24px;font-size:12px;color:{GRIS};line-height:1.6;'
-            f'border-top:1px solid {BORDURE};">{texte_html}</td></tr>')
+            f'border-top:1px solid {BORDURE};">{texte_html}<br><span style="color:{ENCRE};font-weight:700;">YoVendoMás</span> · '
+            f'{e(SLOGAN)}</td></tr>')
 
 
 def _bouton(texte: str, url: str) -> str:
     return (f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px;"><tr>'
-            f'<td style="background:{BLEU};border-radius:6px;">'
-            f'<a href="{e(url)}" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;'
+            f'<td style="background:{ENCRE};border-radius:8px;">'
+            f'<a href="{e(url)}" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:700;'
             f'color:#ffffff;text-decoration:none;font-family:{POLICE};">{e(texte)}</a></td></tr></table>')
 
 
@@ -67,7 +90,7 @@ def _document(titre: str, corps: str) -> str:
 <meta name="color-scheme" content="light"><title>{e(titre)}</title></head>
 <body style="margin:0;padding:0;background:{FOND};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{FOND};"><tr><td align="center" style="padding:28px 10px;">
-<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid {BORDURE};font-family:{POLICE};color:{TEXTE};">
+<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid {BORDURE};border-radius:10px;font-family:{POLICE};color:{TEXTE};">
 {corps}
 </table></td></tr></table></body></html>"""
 
@@ -92,13 +115,13 @@ def _element_html(el: ElementArticle) -> str:
                     f'Intitulé officiel : {e(t.titre)}</div>')
     return f"""
 <tr><td style="padding:22px 32px;border-top:1px solid {BORDURE};">
-  <div style="font-size:11px;color:{GRIS};text-transform:uppercase;letter-spacing:.08em;">{e(t.type_texte)} · {e(t.source_nom)}</div>
-  <div style="font-size:18px;font-weight:600;line-height:1.35;margin:6px 0 8px;"><a href="{e(t.url)}" style="color:{BLEU};text-decoration:none;">{e(el.titre)}</a></div>
+  <div style="font-size:11px;color:{VERT};font-weight:700;text-transform:uppercase;letter-spacing:.08em;">{e(t.type_texte)} · {e(t.source_nom)}</div>
+  <div style="font-family:{POLICE_TITRE};font-size:18px;font-weight:600;line-height:1.35;margin:6px 0 8px;"><a href="{e(t.url)}" style="color:{ENCRE};text-decoration:none;">{e(el.titre)}</a></div>
   <div style="margin-bottom:10px;">{_badge(el.impact)}</div>
   <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">{e(el.resume)}</p>
   <table role="presentation" style="font-size:13px;line-height:1.5;border-collapse:collapse;width:100%;">{info}</table>
   {officiel}
-  <div style="margin-top:12px;"><a href="{e(t.url)}" style="font-size:14px;font-weight:600;color:{BLEU};">Consulter le texte officiel</a></div>
+  <div style="margin-top:12px;"><a href="{e(t.url)}" style="font-size:14px;font-weight:700;color:{VERT};">Consulter le texte officiel →</a></div>
 </td></tr>"""
 
 
@@ -132,18 +155,18 @@ def rendre_email(article: Article, entree: dict, jour: date, url_journal: str = 
         f'<tr><td style="padding:3px 10px 3px 0;vertical-align:top;color:{GRIS};">{i}.</td>'
         f'<td style="padding:3px 0;">{e(el.titre)} <span style="color:{GRIS};">— {e(el.trouvaille.source_nom)}</span></td></tr>'
         for i, el in enumerate(article.elements, start=1))
-    lien = f' <a href="{e(url_journal)}" style="color:{BLEU};">Ouvrir le portail de veille</a>.' if url_journal else ""
+    lien = f' <a href="{e(url_journal)}" style="color:{VERT};">Ouvrir le portail de veille</a>.' if url_journal else ""
     corps = (
         _entete(f"Note de veille du {date_longue_fr(jour)}", pluriel(n, "nouveauté") + " ce matin", organisation)
-        + f'<tr><td style="padding:24px 32px 6px;font-size:15px;line-height:1.65;">{e(article.chapeau)}</td></tr>'
-        + (f'<tr><td style="padding:10px 32px 18px;"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;'
-           f'color:{GRIS};margin-bottom:6px;">Au sommaire</div><table role="presentation" style="font-size:14px;'
+        + f'<tr><td style="padding:22px 32px 8px;"><div style="background:{ENCADRE_FOND};border:1px solid {ENCADRE_BORD};'
+          f'border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.65;"><strong>L\'essentiel.</strong> '
+          f'{e(article.chapeau)}</div></td></tr>'
+        + (f'<tr><td style="padding:12px 32px 18px;">{_titre_section("Au sommaire")}<table role="presentation" style="font-size:14px;'
            f'line-height:1.5;border-collapse:collapse;">{sommaire}</table></td></tr>' if n > 1 else "")
         + avertissement
         + "".join(_element_html(el) for el in article.elements)
         + f'<tr><td style="padding:18px 32px;border-top:1px solid {BORDURE};background:#f7f9fa;">'
-          f'<div style="font-size:12px;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;color:{GRIS};">'
-          f'Sources vérifiées</div><table role="presentation" style="font-size:13px;line-height:1.5;border-collapse:collapse;">'
+          f'{_titre_section("Sources vérifiées")}<table role="presentation" style="font-size:13px;line-height:1.5;border-collapse:collapse;">'
           f'{_sources_html(entree["sources"])}</table></td></tr>'
         + _pied(f"Résumés établis automatiquement à partir des publications officielles : seul le texte publié fait foi."
                 f"{lien}<br>{_mention(organisation, contact)}")

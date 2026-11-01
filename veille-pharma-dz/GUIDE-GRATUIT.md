@@ -63,6 +63,8 @@ C'est terminé : la veille tourne seule chaque matin, vers 6h15-7h30 (heure d'Al
 | Retirer, suspendre, réactiver | Même chemin, en choisissant l'action correspondante et en indiquant l'adresse |
 | Vérifier qu'une adresse reçoit bien | Même chemin → « Envoyer un e-mail de test » |
 | Vérifier tout de suite | Même chemin → « Lancer une vérification » |
+| Surveiller un nouveau site | Même chemin → « Ajouter une source » + nom et adresse de la page (actualités, textes réglementaires ou flux RSS). L'adresse est testée avant d'être enregistrée |
+| Ne plus surveiller un site ajouté | Même chemin → « Retirer une source » + adresse (ou nom) du site |
 
 Après chaque action, GitHub affiche le résultat dans la page de l'exécution : ✅ si l'action a réussi,
 ❌ avec l'explication sinon.
