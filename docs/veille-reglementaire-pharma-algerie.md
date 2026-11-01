@@ -48,7 +48,7 @@ paramètres, coûts, limites).
    `installer.sh`. Elles ne sont volontairement pas écrites dans le code. Les destinataires sont ensuite
    ajoutés depuis le portail.
 2. **Installer la version gratuite** : suivre `veille-pharma-dz/GUIDE-GRATUIT.md` (paquet à déposer sur GitHub :
-   `veille-pharma-dz/preparer-paquet-github.sh`). Vérifié par une simulation locale (git + workflow), pas encore sur GitHub.
+   `veille-pharma-dz/preparer-paquet-github.sh` ; avec `PAQUET_ADMINS` et `PAQUET_GMAIL`, ces valeurs sont écrites dans les workflows et seul le mot de passe Gmail reste à saisir). Vérifié par une simulation locale (git + workflow), pas encore sur GitHub.
 3. Au 1er lancement, **confirmer les sources** : le format d'adresse des PDF du JO et le flux du
    ministère de l'Industrie pharmaceutique. Ils n'ont pas pu être testés depuis l'environnement de
    Claude, qui n'a pas accès aux sites `.dz`.
