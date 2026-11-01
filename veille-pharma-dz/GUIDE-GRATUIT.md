@@ -5,7 +5,8 @@
 - **GitHub** (dépôt privé) fait tourner la veille chaque matin dans son cloud, garde l'historique
   et affiche le tableau de bord.
 - **Gmail** envoie les notes de veille.
-- Les **administrateurs** sont les personnes invitées sur le dépôt, par leur adresse e-mail.
+- Les **administrateurs** (par exemple Amine) n'ont **rien à installer et aucun compte à créer** : ils administrent
+  la veille **par simple e-mail**, en écrivant à l'adresse de la veille (voir « Administration par e-mail »).
 
 Le logiciel est le même que la version Azure. Seuls l'hébergement et l'envoi des e-mails changent.
 
@@ -13,8 +14,10 @@ Le logiciel est le même que la version Azure. Seuls l'hébergement et l'envoi d
 
 ## Installation (environ 20 minutes, une seule fois)
 
-### A. Gmail : créer un mot de passe d'application (5 minutes)
+### A. Gmail : l'adresse de la veille (5 minutes)
 
+0. **Créez une adresse Gmail dédiée à la veille** (par exemple `veille.pharma.yvm@gmail.com`), gratuite. C'est elle qui
+   envoie les notes et qui reçoit les commandes des administrateurs : ne prenez pas une boîte personnelle.
 1. Ouvrez https://myaccount.google.com/security et activez la **Validation en deux étapes**
    si ce n'est pas déjà fait.
 2. Ouvrez https://myaccount.google.com/apppasswords, tapez le nom `Veille`, puis cliquez sur **Créer**.
@@ -46,14 +49,35 @@ Le logiciel est le même que la version Azure. Seuls l'hébergement et l'envoi d
    **Veille réglementaire** → **Run workflow** → laissez « Lancer une vérification » → **Run workflow**.
    Deux minutes plus tard, la page d'accueil du dépôt affiche le **tableau de bord**. La première
    vérification sert de point de départ et indique **RAS**.
-9. **Settings** → **Collaborators** → **Add people** : tapez l'**adresse e-mail** de l'administrateur.
-   Il reçoit une invitation par e-mail, crée un compte GitHub gratuit s'il n'en a pas, et accepte.
+9. Envoyez à l'administrateur le **guide PDF** et l'adresse de la veille. Pour vérifier que tout marche, il écrit à
+   cette adresse un message avec l'objet « Aide » : la veille lui répond avec le mode d'emploi.
+   *(Facultatif : vous pouvez aussi l'inviter sur le dépôt GitHub, Settings → Collaborators, s'il veut voir le
+   tableau de bord détaillé.)*
 
 C'est terminé : la veille tourne seule chaque matin, vers 6h15-7h30 (heure d'Alger).
 
 ---
 
-## Au quotidien
+## Administration par e-mail (pour l'administrateur)
+
+L'administrateur écrit à l'adresse de la veille, **depuis son adresse** (celle indiquée dans `VEILLE_ADMINS`).
+L'objet du message indique la commande, le contenu indique les personnes ou les sites (une ligne chacun).
+La veille répond en moins de 30 minutes, du dimanche au jeudi entre 7h et 19h (heure d'Alger).
+
+| Objet du message | Dans le message | Ce que fait la veille |
+|---|---|---|
+| Ajouter | `adresse, nom, fonction` (une ligne par personne) | inscrit la personne et lui envoie un message de bienvenue |
+| Retirer · Suspendre · Réactiver · Test | une adresse par ligne | retire, met en pause, reprend, envoie un e-mail de test |
+| Source | `adresse du site, nom` | teste le site puis le surveille chaque matin |
+| Retirer source | adresse du site | ne le surveille plus |
+| État | rien | renvoie le tableau de bord : RAS ou nouveautés, état des sources |
+| Vérifier | rien | lance une vérification tout de suite |
+| Liste · Aide | rien | renvoie les destinataires et les sources, ou le mode d'emploi |
+
+Sécurité : seuls les messages des administrateurs, authentifiés par leur messagerie (DMARC/DKIM/SPF), sont pris en
+compte. Les autres messages de la boîte ne sont ni lus ni modifiés.
+
+## Au quotidien (pour vous, sur GitHub)
 
 | Je veux… | Que faire |
 |---|---|

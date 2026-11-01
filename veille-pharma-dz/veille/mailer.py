@@ -83,6 +83,7 @@ class ExpediteurSmtp:
                 message["Subject"] = sujet
                 message["From"] = formataddr((self.p.smtp_nom, self.p.smtp_expediteur))
                 message["To"] = adresse
+                message["X-Veille-Reglementaire"] = "1"  # repère des messages envoyés par la veille elle-même
                 message.attach(MIMEText(html, "html", "utf-8"))
                 serveur.sendmail(self.p.smtp_expediteur, [adresse], message.as_string())
 

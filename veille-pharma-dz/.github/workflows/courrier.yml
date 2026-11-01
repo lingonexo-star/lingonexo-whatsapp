@@ -1,0 +1,60 @@
+# Commandes envoyées par e-mail par l'administrateur (« Ajouter », « État », « Source »…).
+# Toutes les 30 minutes, du dimanche au jeudi, de 7h à 19h (heure d'Alger).
+name: Commandes par e-mail
+
+on:
+  schedule:
+    - cron: "*/30 6-17 * * 0-4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veille
+  cancel-in-progress: false
+
+jobs:
+  courrier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-github.txt
+
+      - name: Installation
+        run: pip install -r requirements-github.txt
+
+      - name: Lire les commandes
+        env:
+          VEILLE_ADMINS: ${{ vars.VEILLE_ADMINS }}
+          VEILLE_ORGANISATION: ${{ vars.VEILLE_ORGANISATION }}
+          VEILLE_STOCKAGE: local
+          VEILLE_DOSSIER_DONNEES: suivi
+          VEILLE_TABLEAU_DE_BORD: README.md
+          VEILLE_MODE_EMAIL: smtp
+          SMTP_HOTE: smtp.gmail.com
+          SMTP_PORT: "587"
+          SMTP_UTILISATEUR: ${{ secrets.GMAIL_ADRESSE }}
+          SMTP_MOT_DE_PASSE: ${{ secrets.GMAIL_MOT_DE_PASSE_APPLICATION }}
+          SMTP_EXPEDITEUR: ${{ secrets.GMAIL_ADRESSE }}
+          IA_URL: ${{ vars.IA_URL }}
+          IA_MODELE: ${{ vars.IA_MODELE }}
+          IA_CLE: ${{ secrets.IA_CLE }}
+        run: python -m veille courrier
+
+      - name: Enregistrer le suivi
+        if: always()
+        run: |
+          git config user.name "Veille réglementaire"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A suivi README.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "Commandes de l'administrateur du $(date -u +%Y-%m-%d)"
+          git pull -q --rebase --autostash
+          git push -q

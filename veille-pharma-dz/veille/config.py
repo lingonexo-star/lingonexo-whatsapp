@@ -106,6 +106,7 @@ class Parametres:
     smtp_mot_de_passe: str
     smtp_expediteur: str
     smtp_nom: str  # nom affiché de l'expéditeur
+    imap_hote: str  # lecture des commandes envoyées par e-mail
     aoai_endpoint: str
     aoai_cle: str
     aoai_deploiement: str
@@ -159,6 +160,7 @@ def charger_parametres(env: dict | None = None) -> Parametres:
         smtp_mot_de_passe=g("SMTP_MOT_DE_PASSE"),
         smtp_expediteur=g("SMTP_EXPEDITEUR"),
         smtp_nom=g("SMTP_NOM_EXPEDITEUR", "Veille réglementaire"),
+        imap_hote=g("IMAP_HOTE", "imap.gmail.com"),
         aoai_endpoint=g("AZURE_OPENAI_ENDPOINT"),
         aoai_cle=g("AZURE_OPENAI_API_KEY"),
         aoai_deploiement=g("AZURE_OPENAI_DEPLOYMENT"),

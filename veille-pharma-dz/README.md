@@ -28,7 +28,7 @@ Il ne dépend ni de Claude, ni de Copilot, ni d'un ordinateur allumé.
 | Coût | **Zéro, sans carte bancaire** | Quelques euros par mois, carte bancaire demandée |
 | Lancement quotidien | GitHub Actions (dépôt privé) | Azure Functions |
 | E-mails | Gmail (mot de passe d'application) | Service d'e-mail Azure ou Microsoft 365 |
-| Administration | Tableau de bord sur la page du dépôt et formulaires de l'onglet Actions. Les administrateurs sont invités par e-mail sur le dépôt | Portail web avec connexion par lien e-mail |
+| Administration | **Par e-mail** (« Ajouter », « État », « Source »…), sans compte ni installation ; tableau de bord sur la page du dépôt pour l'installateur | Portail web avec connexion par lien e-mail |
 | Mode d'emploi | **[GUIDE-GRATUIT.md](GUIDE-GRATUIT.md)** | Sections ci-dessous |
 
 Le moteur de veille (sources, tri, note, RAS) est le même dans les deux cas.
@@ -249,9 +249,11 @@ veille-pharma-dz/
 │   ├── securite.py        # liens de connexion à usage unique, sessions signées, anti-CSRF
 │   ├── mailer.py          # service d'e-mail Azure / Microsoft Graph / SMTP / fichier
 │   └── storage.py         # Blob Azure ou dossier local
-│   └── mode_github.py     # version gratuite : actions et tableau de bord GitHub
+│   ├── mode_github.py     # version gratuite : actions et tableau de bord GitHub
+│   └── courrier.py        # version gratuite : commandes de l'administrateur par e-mail
 ├── .github/workflows/veille.yml   # version gratuite : lancement quotidien et formulaires
-└── tests/                 # 56 tests (faux JO en PDF, faux sites, portail, version GitHub, sources ajoutées)
+├── .github/workflows/courrier.yml # version gratuite : lecture des commandes e-mail (toutes les 30 min)
+└── tests/                 # 74 tests (faux JO en PDF, faux sites, portail, version GitHub, sources, commandes e-mail)
 ```
 
 Essais en local (Python 3.11+) :

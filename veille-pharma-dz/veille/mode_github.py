@@ -237,6 +237,17 @@ def realiser(p: Parametres, action: str, email: str = "", nom: str = "", fonctio
         raise ErreurAction(str(exc)) from exc
 
 
+def ecrire_tableau_de_bord(p: Parametres, stockage: Stockage, env) -> None:
+    depot = env.get("GITHUB_REPOSITORY", "")
+    url_actions = f"{env.get('GITHUB_SERVER_URL', 'https://github.com')}/{depot}/actions/workflows/veille.yml" if depot else "../../actions"
+    maintenant = datetime.now(ZoneInfo(p.fuseau))
+    tableau = rendre_tableau_de_bord(
+        lire_journal(stockage, 60), Annuaire(stockage, p).lister(),
+        sources_admin.charger_configuration_complete(p, stockage).sources,
+        url_actions, Path(p.dossier_donnees).name, maintenant)
+    Path(env.get("VEILLE_TABLEAU_DE_BORD", "README.md")).write_text(tableau, encoding="utf-8")
+
+
 def principal(p: Parametres, env: dict | None = None) -> int:
     """Point d'entrée du workflow GitHub : action, tableau de bord, résumé affiché dans GitHub."""
     env = os.environ if env is None else env
@@ -252,14 +263,7 @@ def principal(p: Parametres, env: dict | None = None) -> int:
     except (ErreurAction, ErreurSource) as exc:
         message, titre, code_retour = str(exc), f"❌ {action} : impossible", 1
 
-    depot = env.get("GITHUB_REPOSITORY", "")
-    url_actions = f"{env.get('GITHUB_SERVER_URL', 'https://github.com')}/{depot}/actions/workflows/veille.yml" if depot else "../../actions"
-    maintenant = datetime.now(ZoneInfo(p.fuseau))
-    tableau = rendre_tableau_de_bord(
-        lire_journal(stockage, 60), Annuaire(stockage, p).lister(),
-        sources_admin.charger_configuration_complete(p, stockage).sources,
-        url_actions, Path(p.dossier_donnees).name, maintenant)
-    Path(env.get("VEILLE_TABLEAU_DE_BORD", "README.md")).write_text(tableau, encoding="utf-8")
+    ecrire_tableau_de_bord(p, stockage, env)
 
     if env.get("GITHUB_STEP_SUMMARY"):
         with open(env["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as resume:

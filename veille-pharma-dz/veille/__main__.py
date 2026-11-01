@@ -6,6 +6,7 @@
     python -m veille jo 2026 57        # analyse un numéro précis du Journal officiel
     python -m veille serveur           # portail d'administration sur http://127.0.0.1:8000
     python -m veille github            # version gratuite : action lancée depuis GitHub Actions
+    python -m veille courrier          # version gratuite : commandes envoyées par e-mail par l'administrateur
 """
 
 from __future__ import annotations
@@ -35,6 +36,7 @@ def main(arguments: list[str] | None = None) -> int:
     serveur = commandes.add_parser("serveur", help="lancer le portail en local (essais)")
     serveur.add_argument("--port", type=int, default=8000)
     commandes.add_parser("github", help="action GitHub Actions (variables ACTION, EMAIL, NOM…)")
+    commandes.add_parser("courrier", help="lire et exécuter les commandes envoyées par e-mail")
     args = parseur.parse_args(arguments)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -57,6 +59,20 @@ def main(arguments: list[str] | None = None) -> int:
         from .mode_github import principal
 
         return principal(parametres)
+
+    if args.commande == "courrier":
+        import os
+
+        from .courrier import relever
+        from .mailer import construire_expediteur
+        from .mode_github import ecrire_tableau_de_bord
+
+        stockage = ouvrir_stockage(parametres)
+        traites = relever(parametres, stockage, construire_expediteur(None, parametres, stockage))
+        print(f"{traites} commande(s) traitée(s)")
+        if traites:
+            ecrire_tableau_de_bord(parametres, stockage, os.environ)
+        return 0
 
     if args.commande == "journal":
         for entree in lire_journal(ouvrir_stockage(parametres), limite=20):
