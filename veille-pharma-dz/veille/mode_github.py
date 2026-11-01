@@ -67,11 +67,10 @@ def rendre_tableau_de_bord(entrees: list[dict], destinataires: list, sources: li
     if entrees:
         d = entrees[0]
         sources_ok = sum(1 for s in d.get("sources", []) if s["statut"] != "erreur")
-        l += ["| | |", "|---|---|",
-              f"| **Résultat** | **{_statut(d)}** |",
-              f"| **Date** | {_quand(d.get('date'))} |",
-              f"| **Sources vérifiées** | {sources_ok} sur {len(d.get('sources', []))} |",
-              "| **Prochaine** | Chaque matin, entre 6h15 et 7h30 (heure d'Alger) |", ""]
+        l += [f"- **Résultat :** **{_statut(d)}**",
+              f"- **Date :** {_quand(d.get('date'))}",
+              f"- **Sources vérifiées :** {sources_ok} sur {len(d.get('sources', []))}",
+              "- **Prochaine :** chaque matin, entre 6h15 et 7h30 (heure d'Alger)", ""]
         if d.get("statut") == "RAS":
             l += ["> **RAS** (rien à signaler) : toutes les sources ont été vérifiées et il n'y a aucune nouveauté. "
                   "Aucun e-mail n'est envoyé ces jours-là.", ""]

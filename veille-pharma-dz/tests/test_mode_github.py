@@ -83,7 +83,7 @@ def test_tableau_de_bord_apres_plusieurs_matins(p):
     from veille.config import charger_configuration
     page = rendre_tableau_de_bord(entrees, [], charger_configuration(p.fichier_sources).sources, "../../actions",
                                   "suivi", datetime(2026, 11, 2, 8, 0))
-    assert "| **Résultat** | **✅ RAS** |" in page
+    assert "- **Résultat :** **✅ RAS**" in page
     assert "[Enregistrement des médicaments](https://www.joradp.dz/x.pdf#page=2)" in page
     assert "[note complète](suivi/rapports/2026-11-01T06-17-00.md)" in page
     assert "| 🔵 1 nouveauté | 1/1 | envoyé à 2 personnes |" in page
