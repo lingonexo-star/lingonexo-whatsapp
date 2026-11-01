@@ -16,7 +16,7 @@ Le logiciel est le même que la version Azure. Seuls l'hébergement et l'envoi d
 
 ### A. Gmail : l'adresse de la veille (5 minutes)
 
-0. **Créez une adresse Gmail dédiée à la veille** (par exemple `veille.pharma.yvm@gmail.com`), gratuite. C'est elle qui
+0. **Créez une adresse Gmail dédiée à la veille** (ici : `veille.pharma.yvm@gmail.com`), gratuite. C'est elle qui
    envoie les notes et qui reçoit les commandes des administrateurs : ne prenez pas une boîte personnelle.
 1. Ouvrez https://myaccount.google.com/security et activez la **Validation en deux étapes**
    si ce n'est pas déjà fait.
