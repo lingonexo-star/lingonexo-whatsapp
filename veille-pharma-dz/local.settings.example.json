@@ -1,0 +1,20 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "VEILLE_PLANNING": "0 0 6 * * *",
+    "VEILLE_DESTINATAIRES": "veille@votre-entreprise.dz",
+    "VEILLE_ALERTE_ADMIN": "informatique@votre-entreprise.dz",
+    "VEILLE_MODE_EMAIL": "fichier",
+    "VEILLE_STOCKAGE": "local",
+    "VEILLE_URL_JOURNAL": "",
+    "GRAPH_TENANT_ID": "",
+    "GRAPH_CLIENT_ID": "",
+    "GRAPH_CLIENT_SECRET": "",
+    "GRAPH_EXPEDITEUR": "",
+    "AZURE_OPENAI_ENDPOINT": "",
+    "AZURE_OPENAI_API_KEY": "",
+    "AZURE_OPENAI_DEPLOYMENT": ""
+  }
+}

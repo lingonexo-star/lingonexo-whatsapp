@@ -1,0 +1,132 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Veille réglementaire – industrie pharmaceutique (Algérie)
+#  Ce fichier se modifie sans toucher au code.
+#
+#  Les mots-clés ne tiennent compte ni des accents ni des majuscules.
+#  Une étoile (*) en fin de mot accepte toutes les terminaisons :
+#  « pharmac* » trouve pharmacie, pharmaceutique, pharmacien, pharmacovigilance…
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Un texte est retenu s'il contient au moins un de ces mots-clés
+# (dans son titre, ou plusieurs fois dans son contenu).
+mots_cles:
+  - pharmac*
+  - medicament*
+  - officine*
+  - ANPP
+  - agence nationale des produits pharmaceutiques
+  - produit* de sante
+  - dispositif* medica*
+  - stupefiant*
+  - psychotrope*
+  - vaccin*
+  - reactif*
+  - essai* clinique*
+  - materiovigilance
+  - bonnes pratiques de fabrication
+  - nomenclature nationale
+  - tarif* de reference
+  - Institut Pasteur
+  - biosimilaire*
+  - complement* alimentaire*
+  # - cosmetique*        # à activer si les cosmétiques vous concernent
+
+# Pour certaines sources (presse, actualités des ministères), on exige en plus
+# un terme réglementaire, pour écarter les simples actualités.
+termes_reglementaires:
+  - loi
+  - lois
+  - ordonnance*
+  - decret*
+  - arrete*
+  - decision*
+  - instruction*
+  - circulaire*
+  - note
+  - notes
+  - reglement*
+  - cahier* des charges
+  - journal officiel
+  - agrement*
+  - enregistrement*
+  - homologation*
+  - autorisation*
+  - procedure*
+  - modalites
+  - obligation*
+  - interdiction*
+  - nouvelle* regle*
+  - entree en vigueur
+  - prix
+  - importation*
+  - exportation*
+  - texte* d'application
+
+# Textes toujours ignorés (bruit administratif). Retirez une ligne pour la réactiver.
+exclusions:
+  - mettant fin aux fonctions
+  - portant nomination
+  - virement de credits
+  - transfert de credits
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Sources surveillées chaque matin
+#  type : joradp (Journal officiel) | rss (flux) | page (page web) | google_news
+#  actif: false  -> source ignorée
+# ─────────────────────────────────────────────────────────────────────────────
+sources:
+
+  # Source de référence : chaque nouveau numéro du Journal officiel est
+  # téléchargé et lu en entier (lois, ordonnances, décrets présidentiels et
+  # exécutifs, arrêtés ministériels et interministériels, décisions).
+  - id: joradp
+    nom: Journal officiel (JORADP)
+    type: joradp
+    modele_url: "https://www.joradp.dz/FTP/jo-francais/{annee}/F{annee}{numero:03d}.pdf"
+    # Codes HTTP signifiant « ce numéro n'existe pas encore ».
+    codes_absents: [404, 410]
+    # Au tout premier lancement, analyser aussi les N derniers numéros parus
+    # (0 = repartir de zéro sans rien signaler du passé).
+    numeros_a_rattraper: 0
+
+  # Ministère de l'Industrie pharmaceutique (site WordPress : flux d'actualités).
+  - id: miph
+    nom: Ministère de l'Industrie pharmaceutique
+    type: rss
+    url: https://www.miph.gov.dz/fr/feed/
+    filtrer: false                    # tout ce ministère concerne le secteur…
+    exige_terme_reglementaire: true   # …mais on ne garde que le réglementaire
+
+  # Ministère du Commerce (commerce intérieur et commerce extérieur).
+  - id: commerce
+    nom: Ministère du Commerce
+    type: page
+    url: https://www.commerce.gov.dz/fr
+
+  # Ministère de l'Industrie.
+  - id: industrie
+    nom: Ministère de l'Industrie
+    type: page
+    url: https://www.industrie.gov.dz
+
+  # Adresses à confirmer avant activation (passer actif à true).
+  - id: anpp
+    nom: ANPP – Agence nationale des produits pharmaceutiques
+    type: page
+    url: https://www.anpp.dz
+    filtrer: false
+    actif: false
+
+  - id: sante
+    nom: Ministère de la Santé
+    type: page
+    url: https://www.sante.gov.dz
+    actif: false
+
+  # Recherche dans la presse (Google Actualités, 7 derniers jours).
+  # Sert de filet de sécurité : signale ce qui n'apparaît pas encore ailleurs.
+  - id: presse
+    nom: Presse (Google Actualités)
+    type: google_news
+    requete: '(médicament OR médicaments OR pharmaceutique OR ANPP) Algérie (décret OR arrêté OR "journal officiel" OR réglementation OR instruction OR circulaire) when:7d'
+    exige_terme_reglementaire: true
