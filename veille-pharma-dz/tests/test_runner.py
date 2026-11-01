@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from veille.config import charger_configuration
 from veille.mailer import ExpediteurFichier
-from veille.render import rendre_journal
+from veille.ui import Contexte, page_journal
 from veille.runner import executer, lire_journal
 from veille.storage import StockageLocal
 from veille.summarize import RedacteurIA
@@ -62,7 +62,7 @@ def test_plusieurs_matins(parametres, faux_http, pdf_jo, pdf_jo_vide):
     assert len(expediteur.envoyes) == 1
     mail = expediteur.envoyes[0]
     assert mail["sujet"] == "Veille réglementaire pharma – 3 nouveautés – mardi 3 novembre 2026"
-    assert "Lire le texte officiel" in mail["html"]
+    assert "Consulter le texte officiel" in mail["html"]
     assert JO.format(58) + "#page=2" in mail["html"]
     assert stockage.lire_texte(j3["rapport"]) == mail["html"]
 
@@ -80,9 +80,9 @@ def test_plusieurs_matins(parametres, faux_http, pdf_jo, pdf_jo_vide):
     # Le journal permet de vérifier chaque matin.
     entrees = lire_journal(stockage)
     assert [x["statut"] for x in entrees] == ["INCOMPLET", "RAS", "NOUVEAUTES", "RAS", "RAS"]
-    page = rendre_journal(entrees, code="cle123")
-    assert "RAS" in page and "Vérification incomplète" in page
-    assert "rapport?id=2026-11-03T07-00-00&amp;code=cle123" in page
+    page = page_journal(Contexte("veille@exemple.dz", "lecteur", "j"), None, entrees)
+    assert "RAS" in page and "Incomplète" in page
+    assert 'href="/rapports/2026-11-03T07-00-00"' in page
 
 
 def test_echec_email_resignale_le_lendemain(parametres, faux_http, pdf_jo, pdf_jo_vide):
@@ -136,4 +136,4 @@ def test_redaction_par_azure_openai(parametres, faux_http, pdf_jo, pdf_jo_vide):
     assert len(j2["ecartes"]) == 1  # l'IA a écarté l'arrêté
     html = expediteur.envoyes[0]["html"]
     assert "Une réforme majeure de l&#x27;enregistrement est publiée." in html
-    assert "Impact : élevé" in html and "Six mois après publication" in html
+    assert "Impact élevé" in html and "Six mois après publication" in html

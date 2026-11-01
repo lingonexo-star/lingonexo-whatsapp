@@ -115,6 +115,11 @@ class Parametres:
     fichier_sources: str
     fuseau: str
     url_journal: str
+    admins: list[str]  # adresses des administrateurs (VEILLE_ADMINS)
+    secret: str  # clé de signature des sessions (VEILLE_SECRET)
+    url_publique: str  # adresse du portail, ex. https://veille-pharma.azurewebsites.net
+    organisation: str  # nom affiché dans le portail et les e-mails
+    planning: str  # expression du minuteur Azure (VEILLE_PLANNING)
 
     @property
     def ia_active(self) -> bool:
@@ -130,9 +135,11 @@ def charger_parametres(env: dict | None = None) -> Parametres:
     if connexion == "UseDevelopmentStorage=true" and not dans_azure:
         connexion = ""
 
+    admins = [a.lower() for a in _liste(g("VEILLE_ADMINS"))]
+    url_publique = g("VEILLE_URL_PUBLIQUE").rstrip("/")
     return Parametres(
-        destinataires=_liste(g("VEILLE_DESTINATAIRES")),
-        alerte_admin=_liste(g("VEILLE_ALERTE_ADMIN")),
+        destinataires=[d.lower() for d in _liste(g("VEILLE_DESTINATAIRES"))],
+        alerte_admin=_liste(g("VEILLE_ALERTE_ADMIN")) or admins,
         mode_email=g("VEILLE_MODE_EMAIL", "graph" if dans_azure else "fichier").lower(),
         graph_tenant=g("GRAPH_TENANT_ID"),
         graph_client_id=g("GRAPH_CLIENT_ID"),
@@ -154,5 +161,10 @@ def charger_parametres(env: dict | None = None) -> Parametres:
         conteneur=g("VEILLE_CONTENEUR", "veille-pharma"),
         fichier_sources=g("VEILLE_SOURCES", str(RACINE / "sources.yaml")),
         fuseau=g("VEILLE_FUSEAU", "Africa/Algiers"),
-        url_journal=g("VEILLE_URL_JOURNAL"),
+        url_journal=g("VEILLE_URL_JOURNAL") or (f"{url_publique}/journal" if url_publique else ""),
+        admins=admins,
+        secret=g("VEILLE_SECRET"),
+        url_publique=url_publique,
+        organisation=g("VEILLE_ORGANISATION"),
+        planning=g("VEILLE_PLANNING", "0 0 6 * * *"),
     )

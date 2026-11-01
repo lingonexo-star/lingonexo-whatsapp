@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from .annuaire import Annuaire
 from .config import Parametres, charger_configuration
 from .http import ClientHttp
 from .mailer import construire_expediteur
@@ -99,26 +100,30 @@ def executer(
     # 3. Envoyer l'e-mail seulement s'il y a des nouveautés ------------------------------
     email_ok = True
     if nb:
-        sujet, html = rendre_email(article, entree, jour, parametres.url_journal)
+        destinataires: list[str] = []
+        contact = parametres.admins[0] if parametres.admins else ""
+        sujet, html = rendre_email(article, entree, jour, parametres.url_journal,
+                                   parametres.organisation, contact)
         entree["rapport"] = f"rapports/{identifiant}.html"
         stockage.ecrire_texte(entree["rapport"], html, "text/html")
         try:
-            if not parametres.destinataires:
-                raise RuntimeError("Aucun destinataire configuré (paramètre VEILLE_DESTINATAIRES).")
+            destinataires = Annuaire(stockage, parametres).actifs()
+            if not destinataires:
+                raise RuntimeError("Aucun destinataire actif : ajoutez-en depuis le portail (page Destinataires).")
             expediteur = expediteur or construire_expediteur(http, parametres, stockage)
-            expediteur.envoyer(parametres.destinataires, sujet, html)
-            entree["email"] = {"envoye": True, "destinataires": parametres.destinataires, "erreur": None}
+            expediteur.envoyer(destinataires, sujet, html)
+            entree["email"] = {"envoye": True, "destinataires": destinataires, "erreur": None}
         except Exception as exc:
             journal.exception("Envoi de l'e-mail impossible")
             email_ok = False
-            entree["email"] = {"envoye": False, "destinataires": parametres.destinataires, "erreur": str(exc)}
+            entree["email"] = {"envoye": False, "destinataires": destinataires, "erreur": str(exc)}
             entree["remarque"] = ("L'e-mail n'a pas pu être envoyé : ces nouveautés seront de nouveau "
                                   "signalées à la prochaine vérification.")
 
     # 4. Alerte technique si une source n'a pas pu être vérifiée --------------------------
     if (en_erreur or not email_ok) and parametres.alerte_admin:
         try:
-            sujet, html = rendre_alerte(entree, jour, parametres.url_journal)
+            sujet, html = rendre_alerte(entree, jour, parametres.url_journal, parametres.organisation)
             expediteur = expediteur or construire_expediteur(http, parametres, stockage)
             expediteur.envoyer(parametres.alerte_admin, sujet, html)
         except Exception:

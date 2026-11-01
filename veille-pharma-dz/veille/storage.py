@@ -22,6 +22,9 @@ class Stockage:
     def lister(self, prefixe: str) -> list[str]:
         raise NotImplementedError
 
+    def supprimer(self, nom: str) -> None:
+        raise NotImplementedError
+
     def lire_json(self, nom: str, defaut=None):
         contenu = self.lire_texte(nom)
         return defaut if contenu is None else json.loads(contenu)
@@ -55,6 +58,9 @@ class StockageLocal(Stockage):
             return []
         return sorted(f"{prefixe.rstrip('/')}/{p.name}" for p in dossier.iterdir() if p.is_file())
 
+    def supprimer(self, nom: str) -> None:
+        self._chemin(nom).unlink(missing_ok=True)
+
 
 class StockageBlob(Stockage):
     def __init__(self, conteneur):
@@ -78,6 +84,14 @@ class StockageBlob(Stockage):
 
     def lister(self, prefixe: str) -> list[str]:
         return sorted(b.name for b in self.conteneur.list_blobs(name_starts_with=prefixe))
+
+    def supprimer(self, nom: str) -> None:
+        from azure.core.exceptions import ResourceNotFoundError
+
+        try:
+            self.conteneur.delete_blob(nom)
+        except ResourceNotFoundError:
+            pass
 
 
 def ouvrir_stockage(parametres: Parametres) -> Stockage:

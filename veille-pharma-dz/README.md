@@ -3,36 +3,64 @@
 Logiciel de *regulatory intelligence* qui tourne **seul, dans le cloud Microsoft (Azure)**.
 Il ne dépend ni de Claude, ni de Copilot, ni d'un ordinateur allumé.
 
-## Ce qu'il fait
+## En bref
 
-Chaque matin à **7h00 (heure d'Alger)**, Azure lance automatiquement la vérification :
+- **Chaque matin à 7h00 (heure d'Alger)**, Azure lance la vérification des sources officielles :
+  Journal officiel, ministères de l'Industrie pharmaceutique, du Commerce et de l'Industrie, et la presse.
+- **S'il y a du nouveau**, les destinataires reçoivent une **note de veille** par e-mail : sommaire,
+  résumé de chaque texte, impact, entrée en vigueur, acteurs concernés et lien vers le texte officiel.
+- **S'il n'y a rien**, aucun e-mail n'est envoyé. Le portail indique **RAS** (rien à signaler).
+- **Un portail web** permet à l'**administrateur** de gérer la liste des destinataires et de suivre la
+  veille. Les destinataires peuvent s'y connecter pour consulter le journal des vérifications.
 
-1. **Journal officiel (JORADP)** : chaque nouveau numéro est téléchargé et lu en entier
-   (lois, ordonnances, décrets présidentiels et exécutifs, arrêtés ministériels et
-   interministériels, décisions).
-2. **Sites officiels** : ministère de l'Industrie pharmaceutique, ministère du Commerce
-   (intérieur et extérieur), ministère de l'Industrie (et l'ANPP et la Santé une fois leurs adresses
-   confirmées).
-3. **Presse** (Google Actualités) : filet de sécurité pour ce qui n'apparaît pas encore ailleurs.
-
-Ensuite :
-
-- **S'il y a du nouveau**, un e-mail part. C'est un court article clair : un résumé par texte,
-  l'impact, l'entrée en vigueur, les acteurs concernés, la source et **le lien vers le texte officiel**.
-- **S'il n'y a rien**, aucun e-mail n'est envoyé. Le **journal** indique **RAS**.
-- **Si une source n'a pas pu être vérifiée** (site en panne, adresse modifiée), le journal
-  n'indique **pas** RAS mais « Vérification incomplète ». Une alerte technique est envoyée.
-  Un RAS veut donc toujours dire « tout a été vérifié et il n'y a rien ».
-
-| E-mail reçu quand il y a du nouveau | Journal consultable à tout moment |
+| Note de veille reçue par e-mail | Portail : tableau de bord de l'administrateur |
 |---|---|
-| ![Exemple d'e-mail](exemples/exemple-email.png) | ![Exemple de journal](exemples/exemple-journal.png) |
+| ![Exemple d'e-mail](exemples/exemple-email.png) | ![Tableau de bord](exemples/portail-tableau-de-bord.png) |
 
-*(Exemples générés avec des données fictives.)*
+*(Captures réalisées avec des données fictives.)*
 
-Le **journal** est une page web privée : une adresse avec une clé, à mettre en favori. On y voit
-chaque vérification (date, heure, RAS ou nouveautés, détail par source). Un bouton
-**« Lancer une vérification maintenant »** permet de relancer à la demande.
+---
+
+## Le portail
+
+Adresse : `https://<nom-de-l-application>.azurewebsites.net/`
+
+### Connexion sans mot de passe
+
+La personne saisit son adresse e-mail et reçoit un **lien de connexion personnel**. Ce lien est
+valable 15 minutes et ne sert qu'une fois. La session reste ouverte 12 heures.
+
+- Seuls l'**administrateur** et les **destinataires actifs** peuvent se connecter. Une adresse
+  inconnue ne reçoit rien, et la page affichée est la même, pour ne pas révéler qui a accès.
+- Retirer ou suspendre un destinataire lui **coupe l'accès immédiatement**.
+- Au plus 5 demandes de lien par heure et par adresse.
+
+![Connexion](exemples/portail-connexion.png)
+
+### Rôles
+
+| | Administrateur | Destinataire |
+|---|---|---|
+| Qui | Adresse(s) indiquée(s) dans le paramètre Azure `VEILLE_ADMINS` | Personnes ajoutées par l'administrateur |
+| Reçoit la note de veille | Oui (il figure dans la liste au départ, il peut se retirer) | Oui, tant qu'il est actif |
+| Tableau de bord, destinataires, sources | ✓ | — |
+| Journal des vérifications et rapports archivés | ✓ | ✓ |
+| Lancer une vérification à la demande | ✓ | — |
+
+### Pages de l'administrateur
+
+- **Tableau de bord** : dernière vérification (RAS, nouveautés ou incomplète), heure de la prochaine,
+  nombre de destinataires, nouveautés des 30 derniers jours, état de chaque source, bouton
+  « Lancer une vérification ».
+- **Destinataires** : ajouter une personne (nom, adresse, fonction), avec un message de bienvenue
+  facultatif qui explique le fonctionnement. Pour chaque personne : **envoyer un e-mail de test**,
+  **suspendre / réactiver**, **retirer**.
+- **Journal** : chaque vérification, avec le détail par source et le rapport complet archivé.
+- **Sources** : liste des sources surveillées et résultat de leur dernière vérification.
+
+| Destinataires | Journal |
+|---|---|
+| ![Destinataires](exemples/portail-destinataires.png) | ![Journal](exemples/portail-journal.png) |
 
 ---
 
@@ -40,11 +68,14 @@ chaque vérification (date, heure, RAS ou nouveautés, détail par source). Un b
 
 ### Ce qu'il faut
 
-- Un **abonnement Azure** (celui de l'entreprise ou un nouveau).
-- Un compte **Microsoft 365** avec une boîte mail expéditrice, par exemple
-  `veille@votre-entreprise.dz` (une boîte partagée suffit).
-- *(Recommandé)* Un accès **Azure OpenAI** pour rédiger les résumés. Sans lui, le logiciel
-  fonctionne quand même : il reprend l'article 1er de chaque texte officiel à la place du résumé.
+- Un **abonnement Azure**.
+- Un compte **Microsoft 365** avec une boîte mail expéditrice, par exemple `veille@votre-entreprise.com`
+  (une boîte partagée suffit).
+- *(Recommandé)* Un accès **Azure OpenAI** pour rédiger les résumés. Sans lui, la note reprend
+  l'article 1er de chaque texte officiel.
+
+> Dans une grande entreprise, la création d'une application Azure et la permission d'envoi d'e-mails
+> (`Mail.Send`) passent en général par le service informatique : prévoyez sa validation.
 
 ### Étape 1 – Créer la Function App
 
@@ -53,46 +84,48 @@ Portail Azure → **Créer une ressource** → **Function App** :
 - Plan d'hébergement : **Flex Consumption** (paiement à l'usage, quasi gratuit pour 1 exécution par jour)
 - Pile d'exécution : **Python 3.11** (ou plus récent proposé)
 - Région : par exemple *France Central* ou *West Europe*
-- Le compte de stockage est créé automatiquement : il sert aussi à garder le journal et l'état de la veille.
+- Le compte de stockage créé avec elle garde aussi le journal, les rapports et la liste des destinataires.
 
 ### Étape 2 – Autoriser l'envoi d'e-mails (Microsoft 365)
 
 Portail Azure → **Microsoft Entra ID** → **Inscriptions d'applications** → **Nouvelle inscription**
-(nom : « Veille pharma ») :
+(nom : « Veille réglementaire ») :
 
 1. **Autorisations d'API** → Ajouter → **Microsoft Graph** → *Autorisations d'application* →
-   **Mail.Send** → puis **Accorder le consentement administrateur**.
+   **Mail.Send** → **Accorder le consentement administrateur**.
 2. **Certificats et secrets** → *Nouveau secret client* → copier la **valeur**.
-3. Noter l'**ID d'annuaire (tenant)** et l'**ID d'application (client)** (page *Vue d'ensemble*).
+3. Noter l'**ID d'annuaire (tenant)** et l'**ID d'application (client)**.
 
 > 🔒 Recommandé : dans Exchange Online, limitez cette application à la seule boîte expéditrice
-> (« RBAC for Applications »). Sinon, elle a le droit d'envoyer au nom de n'importe quelle boîte.
+> (« RBAC for Applications »).
 
 ### Étape 3 – *(Recommandé)* Azure OpenAI
 
-Dans Azure AI Foundry, créez une ressource Azure OpenAI et **déployez un modèle « mini »**
-(peu coûteux, largement suffisant). Notez le **point de terminaison**, la **clé** et le **nom du déploiement**.
+Créez une ressource Azure OpenAI et **déployez un modèle « mini »**. Notez le point de terminaison,
+la clé et le nom du déploiement.
 
 ### Étape 4 – Paramètres de la Function App
 
-Function App → **Paramètres** → **Variables d'environnement** → ajoutez :
+Function App → **Paramètres** → **Variables d'environnement** :
 
 | Nom | Valeur | Rôle |
 |---|---|---|
+| `VEILLE_ADMINS` | adresse de l'administrateur | Qui administre le portail (plusieurs adresses séparées par des virgules) |
+| `VEILLE_SECRET` | une longue suite aléatoire (ex. `openssl rand -hex 32`) | Signe les sessions du portail. Ne pas la communiquer |
+| `VEILLE_URL_PUBLIQUE` | `https://<nom>.azurewebsites.net` | Adresse du portail, utilisée dans les liens des e-mails |
 | `VEILLE_PLANNING` | `0 0 6 * * *` | Tous les jours à 6h UTC = **7h00 à Alger** |
-| `VEILLE_DESTINATAIRES` | `a@entreprise.dz, b@entreprise.dz` | Qui reçoit les nouveautés |
-| `VEILLE_ALERTE_ADMIN` | `informatique@entreprise.dz` | Qui reçoit les alertes techniques |
 | `VEILLE_MODE_EMAIL` | `graph` | Envoi via Microsoft 365 |
 | `GRAPH_TENANT_ID` | *(étape 2)* | |
 | `GRAPH_CLIENT_ID` | *(étape 2)* | |
 | `GRAPH_CLIENT_SECRET` | *(étape 2)* | Idéalement via une référence Key Vault |
-| `GRAPH_EXPEDITEUR` | `veille@entreprise.dz` | Boîte qui envoie |
+| `GRAPH_EXPEDITEUR` | `veille@votre-entreprise.com` | Boîte qui envoie |
 | `AZURE_OPENAI_ENDPOINT` | `https://….openai.azure.com/` | *(étape 3)* |
 | `AZURE_OPENAI_API_KEY` | *(étape 3)* | |
 | `AZURE_OPENAI_DEPLOYMENT` | nom du déploiement | |
-| `VEILLE_URL_JOURNAL` | *(étape 6)* | Lien vers le journal, ajouté en bas des e-mails |
+| `VEILLE_ORGANISATION` | *(facultatif)* nom de votre entité | Affiché dans le portail et les e-mails |
+| `VEILLE_ALERTE_ADMIN` | *(facultatif)* | Destinataires des alertes techniques (par défaut : l'administrateur) |
 
-Le stockage est détecté automatiquement (`AzureWebJobsStorage`).
+Les destinataires ne se règlent **pas** ici : l'administrateur les gère depuis le portail.
 
 ### Étape 5 – Déployer le code
 
@@ -101,21 +134,19 @@ Depuis ce dossier `veille-pharma-dz`, au choix :
 - **VS Code** avec l'extension *Azure Functions* : clic droit sur le dossier → *Deploy to Function App…*
 - ou en ligne de commande : `func azure functionapp publish <nom-de-la-function-app>`
 
-Azure installe lui-même les dépendances (`requirements.txt`).
+### Étape 6 – Première connexion
 
-### Étape 6 – Vérifier
+1. Ouvrez `https://<nom>.azurewebsites.net/` et saisissez l'adresse de l'administrateur. Cliquez sur
+   le lien reçu par e-mail, puis sur **Ouvrir ma session**.
+2. Dans **Destinataires**, ajoutez les personnes qui recevront la note de veille.
+3. Dans le **Tableau de bord**, cliquez sur **Lancer une vérification**. La première sert de point
+   de départ : elle mémorise le dernier numéro du JO et les publications existantes, et affiche
+   **RAS**. Chaque source doit apparaître « Vérifiée ». Une source en « Échec » a une adresse à
+   corriger dans `sources.yaml`.
+4. Dès le lendemain, la veille tourne seule chaque matin.
 
-1. Function App → **Fonctions** → `journal` → **Obtenir l'URL de la fonction**. Ouvrez-la et mettez-la
-   en favori : c'est la page du journal. Copiez-la aussi dans `VEILLE_URL_JOURNAL`.
-2. Cliquez sur **« Lancer une vérification maintenant »**.
-   - La **première** vérification sert de point de départ : elle mémorise le dernier numéro du JO et
-     les publications existantes. Elle affiche **RAS** et chaque source doit apparaître avec ✓.
-   - Une source en ⚠ veut dire que son adresse est à corriger dans `sources.yaml`
-     (voir « Sources » ci-dessous).
-3. Dès le lendemain, la veille tourne seule chaque matin.
-
-> Pour recevoir un premier e-mail de test, mettez `numeros_a_rattraper: 5` dans `sources.yaml`
-> avant le premier lancement. Les 5 derniers numéros du JO seront alors analysés.
+> Pour recevoir une première note de test, mettez `numeros_a_rattraper: 5` dans `sources.yaml` avant
+> le premier lancement : les 5 derniers numéros du JO seront analysés.
 
 ---
 
@@ -126,28 +157,27 @@ exclusions.
 
 | Source | Méthode | État |
 |---|---|---|
-| Journal officiel (joradp.dz) | Détection du numéro suivant, lecture du PDF complet | Activée. Format d'adresse des PDF repris d'un index public, à confirmer au 1er lancement |
-| Ministère de l'Industrie pharmaceutique (miph.gov.dz) | Flux d'actualités | Activée. Adresse du flux à confirmer au 1er lancement |
-| Ministère du Commerce (commerce.gov.dz) | Nouveaux liens de la page | Activée |
-| Ministère de l'Industrie (industrie.gov.dz) | Nouveaux liens de la page | Activée |
-| ANPP | Nouveaux liens de la page | **Désactivée** : adresse à confirmer |
-| Ministère de la Santé | Nouveaux liens de la page | **Désactivée** : adresse à confirmer |
+| Journal officiel (joradp.dz) | Détection du numéro suivant, lecture du PDF complet | Activée. Format d'adresse des PDF à confirmer au 1er lancement |
+| Ministère de l'Industrie pharmaceutique (miph.gov.dz) | Fil d'actualités | Activée. Adresse du fil à confirmer au 1er lancement |
+| Ministère du Commerce (commerce.gov.dz) | Nouvelles publications | Activée |
+| Ministère de l'Industrie (industrie.gov.dz) | Nouvelles publications | Activée |
+| ANPP | Nouvelles publications | **Désactivée** : adresse à confirmer |
+| Ministère de la Santé | Nouvelles publications | **Désactivée** : adresse à confirmer |
 | Presse (Google Actualités) | Recherche sur 7 jours | Activée |
 
-**Comment un texte est retenu :** il doit contenir un mot-clé du secteur (médicament, pharmaceutique,
-ANPP, officine, dispositif médical…) dans son **titre**, ou être publié sous l'en-tête du
-**ministère de l'Industrie pharmaceutique**, ou citer ces mots plusieurs fois dans son **contenu**.
+**Comment un texte est retenu :** il contient un mot-clé du secteur (médicament, pharmaceutique,
+ANPP, officine, dispositif médical…) dans son **titre**, ou il est publié sous l'en-tête du
+**ministère de l'Industrie pharmaceutique**, ou il cite ces mots plusieurs fois dans son **contenu**.
 Les mentions dans les « Vu… » (visas) ne comptent pas. Les nominations et virements de crédits sont
-écartés. Si Azure OpenAI est configuré, l'IA écarte en plus les faux positifs. Ils restent listés
-dans le journal (« Écartés après analyse »), pour plus de transparence.
+écartés. Avec Azure OpenAI, l'IA écarte en plus les faux positifs, qui restent listés dans le journal.
 
 **Fiabilité :**
 
-- Chaque matin, le logiciel vérifie que le dernier numéro connu du JO est toujours accessible. Si ce
-  n'est pas le cas, il signale une erreur au lieu de conclure « rien de nouveau ».
-- Si un PDF du JO ne peut pas être lu, il est **quand même signalé** dans l'e-mail
-  (« à consulter manuellement »).
-- Si l'envoi de l'e-mail échoue, les nouveautés sont **renvoyées le lendemain**.
+- Le logiciel vérifie chaque matin que le dernier numéro connu du JO reste accessible. Si ce n'est
+  pas le cas, il signale une erreur au lieu de conclure « rien de nouveau ».
+- Un PDF du JO illisible est **quand même signalé** dans la note (« à consulter manuellement »).
+- Si l'envoi de la note échoue, les nouveautés sont **renvoyées le lendemain** et l'administrateur
+  est prévenu.
 
 ---
 
@@ -155,17 +185,21 @@ dans le journal (« Écartés après analyse »), pour plus de transparence.
 
 ```
 veille-pharma-dz/
-├── function_app.py      # Azure Functions : minuteur + pages journal / rapport / lancer
-├── sources.yaml         # sources, mots-clés, exclusions
+├── function_app.py        # Azure Functions : minuteur quotidien + portail web
+├── sources.yaml           # sources, mots-clés, exclusions
 ├── veille/
-│   ├── runner.py        # déroulé d'une vérification (sources → article → e-mail/RAS → journal)
+│   ├── runner.py          # une vérification : sources → note → e-mail ou RAS → journal
 │   ├── sources/joradp.py  # Journal officiel : détection, lecture PDF, découpage en textes
-│   ├── sources/web.py   # pages web et flux RSS/Atom
-│   ├── summarize.py     # rédaction (Azure OpenAI ou extrait officiel)
-│   ├── render.py        # e-mail, alerte, page journal
-│   ├── mailer.py        # Microsoft Graph / SMTP / fichier
-│   └── storage.py       # Blob Azure ou dossier local
-└── tests/               # 22 tests (faux JO en PDF, faux sites)
+│   ├── sources/web.py     # pages web et flux RSS/Atom
+│   ├── summarize.py       # rédaction (Azure OpenAI ou extrait officiel)
+│   ├── render.py          # e-mails : note de veille, alerte, lien de connexion, bienvenue, test
+│   ├── portail.py         # routes du portail, rôles, actions
+│   ├── ui.py              # pages HTML du portail
+│   ├── annuaire.py        # administrateurs et destinataires
+│   ├── securite.py        # liens de connexion à usage unique, sessions signées, anti-CSRF
+│   ├── mailer.py          # Microsoft Graph / SMTP / fichier
+│   └── storage.py         # Blob Azure ou dossier local
+└── tests/                 # 38 tests (faux JO en PDF, faux sites, parcours du portail)
 ```
 
 Essais en local (Python 3.11+) :
@@ -173,28 +207,29 @@ Essais en local (Python 3.11+) :
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
-pytest tests                      # tests automatiques
-python -m veille sources          # teste l'accès réel à chaque source
-python -m veille jo 2026 57       # analyse un numéro précis du Journal officiel
-python -m veille lancer           # vérification complète (e-mails enregistrés dans ./donnees/boite_envoi)
-python -m veille journal          # dernières vérifications
+pytest tests                                   # tests automatiques
+VEILLE_ADMINS=vous@exemple.com python -m veille serveur
+                                               # portail sur http://127.0.0.1:8000
+                                               # (liens de connexion dans donnees/boite_envoi/)
+python -m veille sources                       # teste l'accès réel à chaque source
+python -m veille jo 2026 57                    # analyse un numéro précis du Journal officiel
+python -m veille lancer                        # vérification complète
 ```
 
 ## Coût indicatif
 
 Il s'agit d'un ordre de grandeur, à vérifier sur votre abonnement :
 
-- Function App (Flex Consumption) : une exécution par jour reste dans la gratuité mensuelle.
+- Function App (Flex Consumption) : une exécution par jour et quelques visites du portail restent
+  dans la gratuité mensuelle.
 - Stockage : quelques centimes par mois.
 - Azure OpenAI (modèle « mini ») : quelques centimes les jours où il y a des nouveautés.
-
-Au total, quelques euros par mois au plus.
 
 ## Limites
 
 - C'est l'édition **française** du JO qui est analysée. En cas de doute, la version arabe fait foi.
-- Le découpage du JO repose sur la mise en forme habituelle (« Décret exécutif n° … »,
-  « Arrêté du … »). Un texte mal découpé reste signalé, mais son résumé peut être moins précis.
+- Le découpage du JO repose sur sa mise en forme habituelle (« Décret exécutif n° … »,
+  « Arrêté du … »).
 - Si un site change d'adresse ou de structure, la veille le signale (« Vérification incomplète ») et
   il faut corriger `sources.yaml`.
 - Les résumés sont automatiques : seul le texte officiel fait foi.
