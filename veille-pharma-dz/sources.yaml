@@ -89,25 +89,43 @@ sources:
     # (0 = repartir de zéro sans rien signaler du passé).
     numeros_a_rattraper: 0
 
-  # Ministère de l'Industrie pharmaceutique (site WordPress : flux d'actualités).
-  - id: miph
-    nom: Ministère de l'Industrie pharmaceutique
-    type: rss
-    url: https://www.miph.gov.dz/fr/feed/
+  # Annonces des ministères, via Google Actualités.
+  # Les sites des ministères (miph.gov.dz, commerce.gov.dz, industrie.gov.dz) refusent les connexions
+  # venant de serveurs situés hors d'Algérie, dont ceux de GitHub et d'Azure (constaté le 1er novembre 2026).
+  # On suit donc leurs annonces telles que reprises par la presse et l'APS.
+  - id: miph_annonces
+    nom: Ministère de l'Industrie pharmaceutique (annonces)
+    type: google_news
+    requete: '("ministère de l''Industrie pharmaceutique" OR "ministre de l''Industrie pharmaceutique" OR site:miph.gov.dz) when:7d'
     filtrer: false                    # tout ce ministère concerne le secteur…
     exige_terme_reglementaire: true   # …mais on ne garde que le réglementaire
 
-  # Ministère du Commerce (commerce intérieur et commerce extérieur).
+  - id: commerce_industrie_annonces
+    nom: Ministères du Commerce et de l'Industrie (annonces)
+    type: google_news
+    requete: '("ministère du Commerce" OR "ministre du Commerce" OR "ministère de l''Industrie" OR "ministre de l''Industrie" OR site:commerce.gov.dz OR site:industrie.gov.dz) Algérie when:7d'
+    exige_terme_reglementaire: true   # et les mots-clés pharmaceutiques
+
+  # Sites des ministères en accès direct : à réactiver seulement si la veille tourne depuis l'Algérie.
+  - id: miph
+    nom: Ministère de l'Industrie pharmaceutique (site)
+    type: rss
+    url: https://www.miph.gov.dz/fr/feed/
+    filtrer: false
+    exige_terme_reglementaire: true
+    actif: false
+
   - id: commerce
-    nom: Ministère du Commerce
+    nom: Ministère du Commerce (site)
     type: page
     url: https://www.commerce.gov.dz/fr
+    actif: false
 
-  # Ministère de l'Industrie.
   - id: industrie
-    nom: Ministère de l'Industrie
+    nom: Ministère de l'Industrie (site)
     type: page
     url: https://www.industrie.gov.dz
+    actif: false
 
   # Adresses à confirmer avant activation (passer actif à true).
   - id: anpp

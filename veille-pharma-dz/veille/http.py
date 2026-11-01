@@ -12,8 +12,9 @@ AGENT = "VeillePharmaDZ/1.0 (veille reglementaire automatique)"
 
 
 class ClientHttp:
-    def __init__(self, delai: float = 45, essais: int = 3, pause: float = 2.0):
+    def __init__(self, delai: float = 45, essais: int = 3, pause: float = 2.0, connexion: float = 20):
         self.delai = delai
+        self.connexion = connexion  # un site qui bloque les connexions est abandonné vite
         self.essais = essais
         self.pause = pause
         self.session = requests.Session()
@@ -24,6 +25,8 @@ class ClientHttp:
 
     def requete(self, methode: str, url: str, **options) -> requests.Response:
         delai = options.pop("timeout", self.delai)
+        if isinstance(delai, (int, float)):
+            delai = (min(self.connexion, delai), delai)
         derniere: Exception | None = None
         for essai in range(self.essais):
             try:

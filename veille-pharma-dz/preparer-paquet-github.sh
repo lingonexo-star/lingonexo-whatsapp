@@ -14,6 +14,9 @@ find "$DOSSIER" -name __pycache__ -prune -exec rm -rf {} +
 if [ -n "${PAQUET_ADMINS:-}" ]; then
   sed -i "s/\${{ vars.VEILLE_ADMINS }}/\${{ vars.VEILLE_ADMINS || '$PAQUET_ADMINS' }}/" "$DOSSIER"/.github/workflows/*.yml
 fi
+if [ -n "${PAQUET_ALERTE:-}" ]; then
+  sed -i "s/\${{ vars.VEILLE_ALERTE_ADMIN }}/\${{ vars.VEILLE_ALERTE_ADMIN || '$PAQUET_ALERTE' }}/" "$DOSSIER"/.github/workflows/*.yml
+fi
 if [ -n "${PAQUET_GMAIL:-}" ]; then
   sed -i "s/\${{ secrets.GMAIL_ADRESSE }}/\${{ secrets.GMAIL_ADRESSE || '$PAQUET_GMAIL' }}/" "$DOSSIER"/.github/workflows/*.yml
 fi

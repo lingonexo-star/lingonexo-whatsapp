@@ -2,7 +2,9 @@
 
 > **Pour reprendre ce projet avec Claude :** « lis `docs/veille-reglementaire-pharma-algerie.md`
 > et `veille-pharma-dz/README.md`, et continuons ».
-> **Statut (1er novembre 2026) :** logiciel et portail d'administration écrits et testés (74 tests automatiques). Version gratuite GitHub + Gmail prête ; pas encore mise en ligne.
+> **Statut (1er novembre 2026) :** **en service** dans le dépôt privé `lingonexo-star/veille-pharma` (GitHub Actions + Gmail
+> `veille.pharma.yvm@gmail.com`), 74 tests automatiques. Première vérification faite le 1er novembre : JO n° 75/2026 trouvé,
+> presse lue ; les sites des ministères bloquent les serveurs étrangers et sont suivis via Google Actualités.
 
 ## 1. Besoin exprimé
 
@@ -49,9 +51,10 @@ paramètres, coûts, limites).
    ajoutés depuis le portail.
 2. **Installer la version gratuite** : suivre `veille-pharma-dz/GUIDE-GRATUIT.md` (paquet à déposer sur GitHub :
    `veille-pharma-dz/preparer-paquet-github.sh` ; avec `PAQUET_ADMINS` et `PAQUET_GMAIL`, ces valeurs sont écrites dans les workflows et seul le mot de passe Gmail reste à saisir). Vérifié par une simulation locale (git + workflow), pas encore sur GitHub.
-3. Au 1er lancement, **confirmer les sources** : le format d'adresse des PDF du JO et le flux du
-   ministère de l'Industrie pharmaceutique. Ils n'ont pas pu être testés depuis l'environnement de
-   Claude, qui n'a pas accès aux sites `.dz`.
+3. **Sources confirmées le 1er novembre** : le format d'adresse des PDF du JO fonctionne (n° 75/2026 trouvé). Les sites
+   miph.gov.dz, commerce.gov.dz et industrie.gov.dz ne répondent pas depuis GitHub (ConnectTimeout) : ils sont
+   désactivés et remplacés par deux recherches Google Actualités (`miph_annonces`, `commerce_industrie_annonces`).
+   Vérifier après quelques jours qu'elles remontent bien des annonces.
 4. Trouver et activer les adresses de l'**ANPP** et du **ministère de la Santé** (`sources.yaml`).
-5. Donner à Claude l'accès GitHub au dépôt `lingonexo-star/lingonexo-whatsapp` : l'envoi sur
-   GitHub était refusé pendant la session.
+5. Alertes techniques : envoyées seulement à l'installateur (valeur par défaut écrite dans les workflows du dépôt
+   veille-pharma), pas à Amine.

@@ -56,7 +56,7 @@ def test_retrait(parametres, st, faux_http):
     faux_http.ajouter(URL, PAGE.format(nouveau=""))
     sources_admin.ajouter(parametres, st, faux_http, "ANPP", URL)
     with pytest.raises(ErreurSourceAdmin, match="sources de base"):
-        sources_admin.retirer(st, parametres, "Ministère du Commerce")
+        sources_admin.retirer(st, parametres, "Presse (Google Actualités)")
     with pytest.raises(ErreurSourceAdmin, match="Aucune source ajoutée"):
         sources_admin.retirer(st, parametres, "https://autre.dz")
     assert sources_admin.retirer(st, parametres, "anpp.dz/fr/actualites/")["nom"] == "ANPP"

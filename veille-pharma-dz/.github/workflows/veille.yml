@@ -47,7 +47,7 @@ concurrency:
 jobs:
   veille:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -69,6 +69,7 @@ jobs:
           BIENVENUE: ${{ inputs.bienvenue }}
           ADRESSE: ${{ inputs.adresse }}
           VEILLE_ADMINS: ${{ vars.VEILLE_ADMINS }}
+          VEILLE_ALERTE_ADMIN: ${{ vars.VEILLE_ALERTE_ADMIN }}
           VEILLE_ORGANISATION: ${{ vars.VEILLE_ORGANISATION }}
           VEILLE_STOCKAGE: local
           VEILLE_DOSSIER_DONNEES: suivi

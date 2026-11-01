@@ -14,6 +14,7 @@ from .mailer import construire_expediteur
 from .models import ErreurSource, ResultatSource
 from .render import rendre_alerte, rendre_email, rendre_markdown
 from .sources import construire_source
+from .sources.web import cle_url
 from .sources_admin import charger_configuration_complete
 from .storage import Stockage, ouvrir_stockage
 from .summarize import construire_redacteur
@@ -68,7 +69,14 @@ def executer(
         resultats.append(resultat)
 
     # 2. Rédiger l'article ------------------------------------------------------------
-    trouvailles = [t for r in resultats for t in r.trouvailles]
+    # Un même article de presse peut remonter par plusieurs recherches : on ne le garde qu'une fois.
+    # (Les textes du JO partagent l'adresse du PDF : ils restent distingués par leur identifiant.)
+    trouvailles, deja = [], set()
+    for t in (t for r in resultats for t in r.trouvailles):
+        cle = cle_url(t.url) if t.categorie == "presse" and t.url else t.id
+        if cle not in deja:
+            deja.add(cle)
+            trouvailles.append(t)
     article = None
     if trouvailles:
         redacteur = redacteur or construire_redacteur(http, parametres)

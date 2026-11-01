@@ -12,7 +12,7 @@ from veille.storage import StockageLocal
 from veille.summarize import RedacteurIA
 
 from conftest import FausseReponse
-from test_web import NOUVEAU, PAGE, RSS
+from test_web import RSS, RSS_NOUVEAU
 
 ALGER = ZoneInfo("Africa/Algiers")
 JO = "https://www.joradp.dz/FTP/jo-francais/2026/F2026{:03d}.pdf"
@@ -26,11 +26,13 @@ def internet(faux_http, pdf, parametres):
     """Les sites tels qu'ils sont le premier matin."""
     for n in range(1, 58):
         faux_http.ajouter(JO.format(n), pdf, "application/pdf")
-    faux_http.ajouter("https://www.miph.gov.dz/fr/feed/", RSS.format(nouveau=""), "application/rss+xml")
-    faux_http.ajouter("https://www.commerce.gov.dz/fr", PAGE.format(nouveau=""))
-    faux_http.ajouter("https://www.industrie.gov.dz", PAGE.format(nouveau=""))
-    presse = next(c for c in charger_configuration(parametres.fichier_sources).sources if c.id == "presse")
-    faux_http.ajouter(presse.url, RSS.format(nouveau=""), "application/rss+xml")
+    for cfg in charger_configuration(parametres.fichier_sources).sources:
+        if cfg.type == "google_news":
+            faux_http.ajouter(cfg.url, RSS.format(nouveau=""), "application/rss+xml")
+
+
+def flux(parametres, identifiant):
+    return next(c for c in charger_configuration(parametres.fichier_sources).sources if c.id == identifiant).url
 
 
 def lancer(parametres, faux_http, stockage, expediteur, jour, **options):
@@ -53,9 +55,12 @@ def test_plusieurs_matins(parametres, faux_http, pdf_jo, pdf_jo_vide):
     j2 = lancer(parametres, faux_http, stockage, expediteur, 2)
     assert j2["statut"] == "RAS" and expediteur.envoyes == []
 
-    # Matin 3 : un nouveau JO pharmaceutique + un arrêté sur le site du Commerce -> e-mail.
+    # Matin 3 : un nouveau JO pharmaceutique + une annonce du ministère, reprise par deux recherches
+    # de presse -> un seul e-mail, et l'annonce n'y figure qu'une fois.
     faux_http.ajouter(JO.format(58), pdf_jo, "application/pdf")
-    faux_http.ajouter("https://www.commerce.gov.dz/fr", PAGE.format(nouveau=NOUVEAU))
+    for identifiant in ("miph_annonces", "presse"):
+        annonce = RSS_NOUVEAU.replace("de distribution", "de distribution des médicaments")
+        faux_http.ajouter(flux(parametres, identifiant), RSS.format(nouveau=annonce), "application/rss+xml")
     j3 = lancer(parametres, faux_http, stockage, expediteur, 3)
     assert j3["statut"] == "NOUVEAUTES" and j3["nb_nouveautes"] == 3
     assert j3["email"]["envoye"] and j3["email"]["destinataires"] == ["veille@exemple.dz"]
@@ -71,7 +76,7 @@ def test_plusieurs_matins(parametres, faux_http, pdf_jo, pdf_jo_vide):
     assert j4["statut"] == "RAS" and len(expediteur.envoyes) == 1
 
     # Matin 5 : un site est en panne -> « vérification incomplète », alerte technique.
-    faux_http.en_panne.add("https://www.industrie.gov.dz")
+    faux_http.en_panne.add("https://www.joradp.dz")
     j5 = lancer(parametres, faux_http, stockage, expediteur, 5)
     assert j5["statut"] == "INCOMPLET"
     assert expediteur.envoyes[-1]["destinataires"] == ["it@exemple.dz"]

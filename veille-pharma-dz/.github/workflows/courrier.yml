@@ -33,6 +33,7 @@ jobs:
       - name: Lire les commandes
         env:
           VEILLE_ADMINS: ${{ vars.VEILLE_ADMINS }}
+          VEILLE_ALERTE_ADMIN: ${{ vars.VEILLE_ALERTE_ADMIN }}
           VEILLE_ORGANISATION: ${{ vars.VEILLE_ORGANISATION }}
           VEILLE_STOCKAGE: local
           VEILLE_DOSSIER_DONNEES: suivi

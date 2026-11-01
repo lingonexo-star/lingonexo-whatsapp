@@ -107,5 +107,9 @@ Après chaque action, GitHub affiche le résultat dans la page de l'exécution :
   Pour des résumés rédigés, ajoutez les variables `IA_URL` et `IA_MODELE` et le secret `IA_CLE` d'un
   service compatible OpenAI. Certains, comme l'offre gratuite de Google AI Studio, ne demandent pas de
   carte bancaire.
+- **Alertes techniques :** si une source ne répond pas, un e-mail d'alerte part aux administrateurs, ou seulement
+  aux adresses de la variable `VEILLE_ALERTE_ADMIN` si elle est définie.
+- **Sites des ministères :** ils refusent les connexions venant de serveurs situés hors d'Algérie (GitHub, Azure).
+  Leurs annonces sont donc suivies via Google Actualités (voir `sources.yaml`).
 - **Si « Incomplète » s'affiche plusieurs jours de suite :** un site officiel a probablement changé
   d'adresse. Il faut corriger `sources.yaml`.
